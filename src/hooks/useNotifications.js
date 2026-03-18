@@ -71,7 +71,7 @@ export function useNotifications() {
           if (isWithinInterval(dueDate, { start: oneHourAgo, end: inOneHour })) {
             new Notification("Rendu imminent !", {
               body: `Le devoir "${asgn.title}" est à rendre bientôt.`,
-              icon: '/pwa-192x192.png'
+              icon: './favicon.svg'
             });
           }
         });

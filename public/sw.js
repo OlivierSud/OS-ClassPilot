@@ -1,11 +1,8 @@
 const CACHE_NAME = 'classpilot-v1';
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/src/main.jsx',
-  '/src/App.jsx',
-  '/src/index.css',
-  '/manifest.json'
+  './',
+  './index.html',
+  './manifest.json'
 ];
 
 self.addEventListener('install', (event) => {
@@ -29,8 +26,8 @@ self.addEventListener('push', (event) => {
   const data = event.data.json();
   const options = {
     body: data.body,
-    icon: '/pwa-192x192.png',
-    badge: '/pwa-192x192.png',
+    icon: './favicon.svg',
+    badge: './favicon.svg',
     data: {
       url: data.url
     }

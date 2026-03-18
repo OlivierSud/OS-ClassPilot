@@ -54,7 +54,7 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
         <Route path="/" element={session ? <Layout /> : <Navigate to="/login" />}>

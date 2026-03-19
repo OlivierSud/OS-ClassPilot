@@ -60,8 +60,8 @@ self.addEventListener('push', (event) => {
   const data = event.data.json();
   const options = {
     body: data.body,
-    icon: './favicon.svg',
-    badge: './favicon.svg',
+    icon: './logo_app.png',
+    badge: './logo_app.png',
     data: {
       url: data.url
     }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, MoreHorizontal, CheckCircle2, ChevronRight, ChevronUp, ChevronDown, Plus, X, Clock, Pencil } from 'lucide-react';
+import { ChevronLeft, CheckCircle2, ChevronRight, ChevronUp, ChevronDown, Plus, X, Clock, Pencil } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useClassDetail } from '../../hooks/useData';
 import { formatDate } from '../../lib/utils';
@@ -195,9 +195,7 @@ const ClassDetail = () => {
           <ChevronLeft size={24} />
         </button>
         <h1 style={{ fontSize: '1.25rem', fontWeight: 700 }}>{name}</h1>
-        <button className="bg-white p-2 rounded-full shadow-sm">
-          <MoreHorizontal size={24} />
-        </button>
+        <div className="w-10"></div> {/* Spacer to keep title centered */}
       </header>
 
       {/* Progress Card */}

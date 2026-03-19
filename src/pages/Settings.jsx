@@ -29,8 +29,8 @@ const Settings = () => {
     }
   };
 
-  const SettingItem = ({ icon: Icon, label, value, onClick, color = 'var(--primary)', type = 'button', isToggled, children }) => {
-    const active = isToggled !== undefined ? isToggled : (label === "Mode Sombre" ? isDarkMode : false);
+  const SettingItem = ({ icon: Icon, label, value, onClick, color = 'var(--primary)', type = 'button', isToggled, children, isDark }) => {
+    const active = isToggled !== undefined ? isToggled : (label === "Mode Sombre" ? isDark : false);
     
     return (
       <div 
@@ -53,21 +53,32 @@ const Settings = () => {
             
             {type === 'toggle' ? (
               <div 
-                className="relative rounded-full transition-all duration-300 shadow-inner"
+                className="relative rounded-full transition-all duration-300"
                 style={{ 
-                  width: '50px', 
-                  height: '26px', 
-                  backgroundColor: active ? '#22C55E' : '#e2e8f0'
+                  width: '56px', 
+                  height: '30px', 
+                  backgroundColor: active ? '#22C55E' : (isDark ? '#1e293b' : '#E8EDF2'),
+                  boxShadow: active 
+                    ? 'inset 2px 2px 4px rgba(0,0,0,0.1)' 
+                    : (isDark 
+                      ? 'inset 4px 4px 8px #0f172a, inset -4px -4px 8px #334155' 
+                      : 'inset 4px 4px 6px #d1d9e6, inset -4px -4px 6px #ffffff'),
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '0 5px',
+                  border: isDark ? '1px solid #334155' : '1px solid #f8fafc'
                 }}
               >
                 <div 
-                  className="absolute bg-white rounded-full transition-all duration-300 transform shadow-md"
+                  className="bg-white rounded-full transition-all duration-300 transform"
                   style={{ 
-                    transform: active ? 'translateX(24px)' : 'translateX(0)',
+                    transform: active ? 'translateX(26px)' : 'translateX(0)',
                     width: '20px',
                     height: '20px',
-                    top: '3px',
-                    left: '3px'
+                    boxShadow: isDark 
+                      ? '2px 2px 5px #0f172a' 
+                      : '3px 3px 6px #b8b9be, -3px -3px 6px #ffffff',
+                    background: active ? '#fff' : (isDark ? '#e2e8f0' : '#fff')
                   }}
                 />
               </div>
@@ -95,6 +106,7 @@ const Settings = () => {
         type="toggle"
         color="#8b5cf6"
         onClick={() => setIsDarkMode(!isDarkMode)}
+        isDark={isDarkMode}
       />
       <SettingItem 
         icon={Bell} 
@@ -103,6 +115,7 @@ const Settings = () => {
         isToggled={preferences?.notify_daily}
         color="var(--primary)" 
         onClick={() => updatePreferences({ notify_daily: !preferences?.notify_daily })}
+        isDark={isDarkMode}
       >
         {preferences?.notify_daily && (
           <select 
@@ -124,6 +137,7 @@ const Settings = () => {
         isToggled={preferences?.notify_weekly}
         color="var(--success)" 
         onClick={() => updatePreferences({ notify_weekly: !preferences?.notify_weekly })}
+        isDark={isDarkMode}
       />
 
       <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 mt-8 ml-4">Application</div>
@@ -134,6 +148,7 @@ const Settings = () => {
         color={isInstalled ? "var(--success)" : (isInstallable ? "var(--primary)" : "#94a3b8")} 
         onClick={(isInstalled || !isInstallable) ? null : installPWA}
         type={(isInstalled || !isInstallable) ? 'info' : 'button'}
+        isDark={isDarkMode}
       />
 
       <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 mt-8 ml-4">Compte</div>
@@ -142,6 +157,7 @@ const Settings = () => {
         label="Déconnexion" 
         color="var(--error)" 
         onClick={handleLogout}
+        isDark={isDarkMode}
       />
 
       <div className="text-center mt-12 opacity-30">

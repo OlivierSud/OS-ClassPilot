@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
 import { Download } from 'lucide-react';
-import { usePWAInstall } from '../hooks/usePWA';
+import { usePWA } from '../context/PWAContext';
 import logoApp from '../icones/logo_app.png';
 
 const Login = () => {
-  const { isInstallable, installPWA, isInstalled } = usePWAInstall();
+  const { isInstallable, installPWA, isInstalled } = usePWA();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);

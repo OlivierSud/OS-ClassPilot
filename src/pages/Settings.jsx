@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { LogOut, Sun, Moon, Bell, ChevronRight, Download, Clock, Calendar } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
-import { usePWAInstall } from '../hooks/usePWA';
+import { usePWA } from '../context/PWAContext';
 import { useUserPreferences } from '../hooks/useData';
 
 const Settings = () => {
-  const { isInstallable, installPWA, isInstalled } = usePWAInstall();
+  const { isInstallable, installPWA, isInstalled } = usePWA();
   const { preferences, updatePreferences } = useUserPreferences();
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return document.documentElement.classList.contains('dark') || 
@@ -130,10 +130,10 @@ const Settings = () => {
       <SettingItem 
         icon={isInstalled ? () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17L4 12" /></svg> : Download} 
         label={isInstalled ? "ClassPilot installée" : "Installer l'application"} 
-        value={isInstalled ? "Sur votre écran d'accueil" : "Ajouter ClassPilot au menu"}
-        color={isInstalled ? "var(--success)" : "var(--primary)"} 
-        onClick={isInstalled ? null : installPWA}
-        type={isInstalled ? 'info' : 'button'}
+        value={isInstalled ? "Sur votre écran d'accueil" : (isInstallable ? "Ajouter ClassPilot au menu" : "Indisponible sur ce navigateur")}
+        color={isInstalled ? "var(--success)" : (isInstallable ? "var(--primary)" : "#94a3b8")} 
+        onClick={(isInstalled || !isInstallable) ? null : installPWA}
+        type={(isInstalled || !isInstallable) ? 'info' : 'button'}
       />
 
       <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 mt-8 ml-4">Compte</div>

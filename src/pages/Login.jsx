@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
 import { Download } from 'lucide-react';
 import { usePWA } from '../context/PWAContext';
-import logoApp from '../icones/logo_app.png';
+import logoApp from '../icones/logo_ClassPilot.png';
 
 const Login = () => {
   const { isInstallable, installPWA, isInstalled } = usePWA();

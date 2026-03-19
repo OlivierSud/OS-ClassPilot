@@ -3,7 +3,7 @@ const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
-  './logo_app.png'
+  './logo_ClassPilot.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -60,8 +60,8 @@ self.addEventListener('push', (event) => {
   const data = event.data.json();
   const options = {
     body: data.body,
-    icon: './logo_app.png',
-    badge: './logo_app.png',
+    icon: './logo_ClassPilot.png',
+    badge: './logo_ClassPilot.png',
     data: {
       url: data.url
     }

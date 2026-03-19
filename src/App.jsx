@@ -25,14 +25,7 @@ function App() {
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session && import.meta.env.DEV && import.meta.env.VITE_DEV_AUTO_LOGIN === 'true') {
-        const email = import.meta.env.VITE_DEV_EMAIL;
-        const password = import.meta.env.VITE_DEV_PASSWORD;
-        if (email && password) {
-          supabase.auth.signInWithPassword({ email, password });
-          return;
-        }
-      }
+
       setSession(session);
       setLoading(false);
     });

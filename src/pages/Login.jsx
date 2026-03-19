@@ -137,24 +137,7 @@ const Login = () => {
             {loading ? 'Connexion...' : 'Connexion'}
           </button>
 
-          {import.meta.env.DEV && (
-            <button 
-              type="button"
-              onClick={() => {
-                setEmail(import.meta.env.VITE_DEV_EMAIL || '');
-                setPassword(import.meta.env.VITE_DEV_PASSWORD || '');
-              }}
-              style={{
-                marginTop: '10px',
-                fontSize: '11px',
-                color: 'rgba(255,255,255,0.4)',
-                textAlign: 'center',
-                textDecoration: 'underline'
-              }}
-            >
-              Remplir compte dev
-            </button>
-          )}
+
 
           <button 
             type="button"

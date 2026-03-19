@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LogOut, Sun, Moon, Bell, ChevronRight, Download, Clock, Calendar } from 'lucide-react';
+import { LogOut, Sun, Moon, Bell, ChevronRight, Download, Clock, Calendar, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
 import { usePWA } from '../context/PWAContext';
@@ -26,6 +26,21 @@ const Settings = () => {
   const handleLogout = async () => {
     if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
       await supabase.auth.signOut();
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmation = confirm('ATTENTION : Cette action est irréversible. Toutes vos classes, devoirs et préférences seront supprimés définitivement. Continuer ?');
+    if (confirmation) {
+      const { error } = await supabase.rpc('delete_own_user');
+      if (error) {
+        alert("Erreur lors de la suppression : " + error.message);
+      } else {
+        // La suppression de l'utilisateur dans auth.users déconnecte automatiquement dans la plupart des cas, 
+        // mais on force le nettoyage local
+        await supabase.auth.signOut();
+        window.location.href = '/';
+      }
     }
   };
 
@@ -155,8 +170,16 @@ const Settings = () => {
       <SettingItem 
         icon={LogOut} 
         label="Déconnexion" 
-        color="var(--error)" 
+        color="var(--primary)" 
         onClick={handleLogout}
+        isDark={isDarkMode}
+      />
+      <SettingItem 
+        icon={Trash2} 
+        label="Supprimer le compte" 
+        value="Action irréversible"
+        color="var(--error)" 
+        onClick={handleDeleteAccount}
         isDark={isDarkMode}
       />
 

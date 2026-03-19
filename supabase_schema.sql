@@ -6,7 +6,7 @@ CREATE TABLE classes (
   name TEXT NOT NULL,
   color TEXT DEFAULT 'var(--grad-primary)',
   progress INTEGER DEFAULT 0,
-  user_id UUID REFERENCES auth.users(id),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE DEFAULT auth.uid(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -79,3 +79,29 @@ CREATE POLICY "Users can manage program items of their classes" ON program_items
       WHERE classes.id = program_items.class_id AND classes.user_id = auth.uid()
     )
   );
+
+-- 5. User Preferences
+CREATE TABLE user_preferences (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL UNIQUE,
+  notify_daily BOOLEAN DEFAULT TRUE,
+  daily_hour INTEGER DEFAULT 18,
+  notify_weekly BOOLEAN DEFAULT TRUE,
+  theme TEXT DEFAULT 'light',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enable RLS for user_preferences
+ALTER TABLE user_preferences ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage their own preferences" ON user_preferences
+  FOR ALL USING (auth.uid() = user_id);
+
+-- 6. Helper for self account deletion
+CREATE OR REPLACE FUNCTION delete_own_user()
+RETURNS void AS $$
+BEGIN
+  DELETE FROM auth.users WHERE id = auth.uid();
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+

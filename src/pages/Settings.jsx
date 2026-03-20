@@ -178,22 +178,22 @@ const Settings = () => {
       />
       
       {permission === 'granted' && (
-        <div className="mx-4 mb-2 -mt-2">
-          <button 
-            onClick={() => {
-              if (window.Notification) {
-                new Notification("Test ClassPilot", {
-                  body: "Félicitations ! Les notifications de ClassPilot fonctionnent sur cet appareil.",
-                  icon: '/logo_ClassPilot.png'
-                });
-              }
-            }}
-            className="text-[10px] font-black uppercase tracking-widest text-primary hover:opacity-70 transition-opacity flex items-center gap-1.5"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
-            Tester une notification locale
-          </button>
-        </div>
+        <SettingItem 
+          icon={Bell} 
+          label="Tester les notifications" 
+          value="Cliquez pour envoyer un test"
+          color="#f59e0b" 
+          onClick={() => {
+            if (window.Notification) {
+              new Notification("Test ClassPilot", {
+                body: "Félicitations ! Les notifications de ClassPilot fonctionnent sur cet appareil.",
+                icon: '/logo_ClassPilot.png'
+              });
+            }
+          }}
+          type="button"
+          isDark={isDarkMode}
+        />
       )}
 
       <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 mt-8 ml-4">Application</div>

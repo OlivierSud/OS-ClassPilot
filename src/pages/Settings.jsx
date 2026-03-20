@@ -146,15 +146,44 @@ const Settings = () => {
         isDark={isDarkMode}
       >
         {preferences?.notify_daily && (
-          <select 
-            value={preferences?.daily_hour}
-            onChange={(e) => updatePreferences({ daily_hour: parseInt(e.target.value) })}
-            className="bg-slate-50 dark:bg-slate-800 border-none rounded-xl px-2 py-1 text-xs font-black text-primary outline-none"
-          >
-            {[8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].map(h => (
-              <option key={h} value={h}>{h}h00</option>
-            ))}
-          </select>
+          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+            {(() => {
+              const totalMinutes = preferences?.daily_hour !== undefined 
+                ? (preferences.daily_hour < 24 ? preferences.daily_hour * 60 : preferences.daily_hour) 
+                : 18 * 60;
+              const h = Math.floor(totalMinutes / 60);
+              const m = totalMinutes % 60;
+              
+              return (
+                <>
+                  <select 
+                    value={h}
+                    onChange={(e) => {
+                      const newH = parseInt(e.target.value);
+                      updatePreferences({ daily_hour: newH * 60 + m });
+                    }}
+                    className="bg-slate-100 dark:bg-slate-800 border-none rounded-xl px-2 py-1.5 text-xs font-black text-primary outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                  >
+                    {[...Array(24).keys()].map(hour => (
+                      <option key={hour} value={hour}>{hour.toString().padStart(2, '0')}h</option>
+                    ))}
+                  </select>
+                  <select 
+                    value={m}
+                    onChange={(e) => {
+                      const newM = parseInt(e.target.value);
+                      updatePreferences({ daily_hour: h * 60 + newM });
+                    }}
+                    className="bg-slate-100 dark:bg-slate-800 border-none rounded-xl px-2 py-1.5 text-xs font-black text-primary outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                  >
+                    {[0, 15, 30, 45].map(min => (
+                      <option key={min} value={min}>{min.toString().padStart(2, '0')}</option>
+                    ))}
+                  </select>
+                </>
+              );
+            })()}
+          </div>
         )}
       </SettingItem>
       <SettingItem 
@@ -177,40 +206,7 @@ const Settings = () => {
         isDark={isDarkMode}
       />
       
-      {permission === 'granted' && (
-        <SettingItem 
-          icon={Bell} 
-          label="Tester les notifications" 
-          value="Cliquez pour envoyer un test"
-          color="#f59e0b" 
-          onClick={async () => {
-            console.log('Test notification clicked');
-            try {
-              if ('serviceWorker' in navigator) {
-                const registration = await navigator.serviceWorker.ready;
-                registration.showNotification("Test ClassPilot", {
-                  body: "Félicitations ! Les notifications de ClassPilot fonctionnent sur cet appareil via le Service Worker.",
-                  icon: `${import.meta.env.BASE_URL}logo_ClassPilot.png`,
-                  badge: `${import.meta.env.BASE_URL}logo_ClassPilot.png`,
-                  vibrate: [200, 100, 200],
-                  tag: 'test-notification'
-                });
-                console.log('Test notification shown via SW');
-              } else if (window.Notification) {
-                new Notification("Test ClassPilot", {
-                  body: "Ceci est un test en mode direct (SW non dispo).",
-                  icon: `${import.meta.env.BASE_URL}logo_ClassPilot.png`
-                });
-              }
-            } catch (err) {
-              console.error('Test notification failed:', err);
-              alert("Impossible d'afficher la notification : " + err.message);
-            }
-          }}
-          type="button"
-          isDark={isDarkMode}
-        />
-      )}
+      {/* Notification test removed */}
 
       <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 mt-8 ml-4">Application</div>
       <SettingItem 
@@ -244,16 +240,7 @@ const Settings = () => {
         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">ClassPilot v1.2.0 • 2026</p>
       </div>
       
-      {/* Debug Info (Only for troubleshooting) */}
-      <div className="mt-8 p-4 bg-slate-100 dark:bg-slate-800 rounded-2xl opacity-50 text-[10px] font-mono">
-        <p className="font-bold mb-1 uppercase tracking-widest text-primary">Diagnostic Notifications</p>
-        <div className="grid grid-cols-2 gap-2 text-slate-500 dark:text-slate-400">
-          <div>Permission: {permission}</div>
-          <div>Notification support: {('Notification' in window).toString()}</div>
-          <div>SW support: {('serviceWorker' in navigator).toString()}</div>
-          <div>Secure context: {window.isSecureContext ? 'Oui' : 'Non'}</div>
-        </div>
-      </div>
+      {/* Diagnostic tool removed */}
     </div>
   );
 };

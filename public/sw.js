@@ -57,18 +57,32 @@ self.addEventListener('fetch', (event) => {
 
 // Logic for notifications
 self.addEventListener('push', (event) => {
-  const data = event.data.json();
+  let data = {};
+  
+  try {
+    if (event.data) {
+      data = event.data.json();
+    }
+  } catch (e) {
+    // If it's not JSON, try to get text
+    console.warn('Push data was not JSON:', e);
+    data = {
+      title: 'ClassPilot',
+      body: event.data.text()
+    };
+  }
+
   const options = {
-    body: data.body,
+    body: data.body || 'Vous avez une nouvelle notification ClassPilot.',
     icon: './logo_ClassPilot.png',
     badge: './logo_ClassPilot.png',
     data: {
-      url: data.url
+      url: data.url || './'
     }
   };
 
   event.waitUntil(
-    self.registration.showNotification(data.title, options)
+    self.registration.showNotification(data.title || 'ClassPilot', options)
   );
 });
 

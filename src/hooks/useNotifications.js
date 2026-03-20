@@ -1,14 +1,26 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { addHours, subHours, isWithinInterval } from 'date-fns';
 import { urlBase64ToUint8Array } from '../lib/push';
 
 // NOTE: You'll need to generate your own VAPID keys.
 // For now, this is a placeholder. 
-const VAPID_PUBLIC_KEY = 'BNgF2V-1-Nz6nof22uC0IsCCxLxTxKEb3e7XmF8DrLaf1kxnNivWOhCMy_N31eQMgC6Uf4ddO4-fzb2IBDBztck';
+const VAPID_PUBLIC_KEY = 'BCXE6n6giLYrpK1aLCh4BeUchfpyt_8vXcU3MeaaZm0yiUpz_C6dQAlaQBaeyAAInJxdW2kLttoFSiodSIsX9h0';
 
 export function useNotifications() {
+  const [permission, setPermission] = useState(Notification.permission);
+
   const subscribeUserToPush = async () => {
+    if (Notification.permission === 'denied') {
+      alert("Les notifications sont bloquées par votre navigateur. Veuillez les activer dans les paramètres du site.");
+      return;
+    }
+
+    const status = await Notification.requestPermission();
+    setPermission(status);
+
+    if (status !== 'granted') return;
+
     try {
       if (!('serviceWorker' in navigator)) return;
 
@@ -71,7 +83,7 @@ export function useNotifications() {
           if (isWithinInterval(dueDate, { start: oneHourAgo, end: inOneHour })) {
             new Notification("Rendu imminent !", {
               body: `Le devoir "${asgn.title}" est à rendre bientôt.`,
-              icon: './favicon.svg'
+              icon: '/logo_ClassPilot.png'
             });
           }
         });
@@ -83,4 +95,6 @@ export function useNotifications() {
 
     return () => clearInterval(interval);
   }, []);
+
+  return { subscribeUserToPush, permission };
 }

@@ -1,5 +1,5 @@
 -- Create tables for ClassPilot
-
+DROP TABLE IF EXISTS classes, courses, assignments, program_items, user_preferences CASCADE;
 -- 1. Classes
 CREATE TABLE classes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -104,4 +104,17 @@ BEGIN
   DELETE FROM auth.users WHERE id = auth.uid();
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 7. Push Subscriptions
+CREATE TABLE push_subscriptions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  subscription JSONB NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage their own push subscriptions" ON push_subscriptions
+  FOR ALL USING (auth.uid() = user_id);
 

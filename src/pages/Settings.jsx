@@ -4,10 +4,12 @@ import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
 import { usePWA } from '../context/PWAContext';
 import { useUserPreferences } from '../hooks/useData';
+import { useNotifications } from '../hooks/useNotifications';
 
 const Settings = () => {
   const { isInstallable, installPWA, isInstalled } = usePWA();
   const { preferences, updatePreferences } = useUserPreferences();
+  const { subscribeUserToPush, permission } = useNotifications();
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return document.documentElement.classList.contains('dark') || 
            localStorage.getItem('theme') === 'dark';
@@ -152,6 +154,15 @@ const Settings = () => {
         isToggled={preferences?.notify_weekly}
         color="var(--success)" 
         onClick={() => updatePreferences({ notify_weekly: !preferences?.notify_weekly })}
+        isDark={isDarkMode}
+      />
+      <SettingItem 
+        icon={Bell} 
+        label="Push Android" 
+        value={permission === 'granted' ? "Activé sur cet appareil" : (permission === 'denied' ? "Bloqué (cliquez pour corriger)" : "Cliquer pour activer")}
+        color={permission === 'granted' ? "var(--success)" : (permission === 'denied' ? "var(--error)" : "var(--primary)")} 
+        onClick={subscribeUserToPush}
+        type={permission === 'granted' ? 'info' : 'button'}
         isDark={isDarkMode}
       />
 

@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
 import { Download } from 'lucide-react';
 import { usePWA } from '../context/PWAContext';
-import logoApp from '../icones/logo_ClassPilot.png';
+import iconeApp from '../icones/icone.png';
 
 const Login = () => {
   const { isInstallable, installPWA, isInstalled } = usePWA();
@@ -58,7 +58,7 @@ const Login = () => {
         }}
       >
         {/* Icon */}
-        <img src={logoApp} alt="logo" style={{ width: '80px', marginBottom: '15px' }} />
+        <img src={iconeApp} alt="logo" style={{ width: '80px', marginBottom: '15px' }} />
         
         {/* Title & Subtitle */}
         <h1 style={{ fontSize: '28px', marginBottom: '5px', color: '#F5F7FA' }}>

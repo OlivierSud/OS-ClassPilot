@@ -183,12 +183,28 @@ const Settings = () => {
           label="Tester les notifications" 
           value="Cliquez pour envoyer un test"
           color="#f59e0b" 
-          onClick={() => {
-            if (window.Notification) {
-              new Notification("Test ClassPilot", {
-                body: "Félicitations ! Les notifications de ClassPilot fonctionnent sur cet appareil.",
-                icon: '/logo_ClassPilot.png'
-              });
+          onClick={async () => {
+            console.log('Test notification clicked');
+            try {
+              if ('serviceWorker' in navigator) {
+                const registration = await navigator.serviceWorker.ready;
+                registration.showNotification("Test ClassPilot", {
+                  body: "Félicitations ! Les notifications de ClassPilot fonctionnent sur cet appareil via le Service Worker.",
+                  icon: `${import.meta.env.BASE_URL}logo_ClassPilot.png`,
+                  badge: `${import.meta.env.BASE_URL}logo_ClassPilot.png`,
+                  vibrate: [200, 100, 200],
+                  tag: 'test-notification'
+                });
+                console.log('Test notification shown via SW');
+              } else if (window.Notification) {
+                new Notification("Test ClassPilot", {
+                  body: "Ceci est un test en mode direct (SW non dispo).",
+                  icon: `${import.meta.env.BASE_URL}logo_ClassPilot.png`
+                });
+              }
+            } catch (err) {
+              console.error('Test notification failed:', err);
+              alert("Impossible d'afficher la notification : " + err.message);
             }
           }}
           type="button"

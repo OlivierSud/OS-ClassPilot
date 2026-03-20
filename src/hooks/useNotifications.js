@@ -119,13 +119,23 @@ export function useNotifications() {
     }
 
     if (data) {
+      const registration = 'serviceWorker' in navigator ? await navigator.serviceWorker.ready : null;
+      
       data.forEach(asgn => {
         const dueDate = new Date(asgn.due_date);
         if (isWithinInterval(dueDate, { start: oneHourAgo, end: inOneHour })) {
-          new Notification("Rendu imminent !", {
+          const title = "Rendu imminent !";
+          const options = {
             body: `Le devoir "${asgn.title}" est à rendre bientôt.`,
-            icon: '/logo_ClassPilot.png'
-          });
+            icon: `${import.meta.env.BASE_URL}logo_ClassPilot.png`,
+            badge: `${import.meta.env.BASE_URL}logo_ClassPilot.png`
+          };
+          
+          if (registration) {
+            registration.showNotification(title, options);
+          } else {
+            new Notification(title, options);
+          }
         }
       });
     }

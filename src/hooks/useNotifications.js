@@ -10,6 +10,8 @@ export function useNotifications() {
   const [permission, setPermission] = useState('Notification' in window ? Notification.permission : 'unsupported');
 
   const subscribeUserToPush = async () => {
+    console.log('Attempting to subscribe to push...');
+    
     if (!('Notification' in window)) {
       alert("Votre navigateur ne supporte pas les notifications.");
       return;
@@ -21,46 +23,65 @@ export function useNotifications() {
     }
 
     try {
+      console.log('Requesting permission...');
       const status = await Notification.requestPermission();
+      console.log('Permission status:', status);
       setPermission(status);
 
-      if (status !== 'granted') return;
-
-      if (!('serviceWorker' in navigator)) {
-        console.error('Service Worker not supported');
+      if (status !== 'granted') {
+        alert("Permission refusée ou ignorée.");
         return;
       }
 
+      if (!('serviceWorker' in navigator)) {
+        alert("Les Service Workers ne sont pas supportés ou vous n'êtes pas dans un contexte sécurisé (HTTPS).");
+        return;
+      }
+
+      console.log('Waiting for SW ready...');
       const registration = await navigator.serviceWorker.ready;
-      
-      // We always try to subscribe or get existing to make sure it's in our DB
+      console.log('SW ready!');
+
+      if (!registration.pushManager) {
+        alert("Push Manager non disponible sur ce navigateur.");
+        return;
+      }
+
+      console.log('Subscribing to push manager...');
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
       });
+      console.log('Subscription successful:', subscription);
 
       // Save/Update subscription to Supabase
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // Use upsert or manual check to avoid duplicates in the logic
-        // But for now, we'll just insert and let the server handle it or use a simple insert
-        // Better: Check if this subscription already exists for this user
+        console.log('Saving subscription for user:', user.id);
         const subJson = subscription.toJSON();
         
-        await supabase
+        const { error } = await supabase
           .from('push_subscriptions')
           .insert([{
             user_id: user.id,
             subscription: subJson
           }]);
           
-        console.log('Subscription saved to Supabase');
+        if (error) {
+          console.error('Database error:', error);
+          alert("Erreur lors de l'enregistrement en base de données : " + error.message);
+        } else {
+          alert("Notifications activées avec succès !");
+          console.log('Subscription saved to Supabase');
+        }
+      } else {
+        alert("Vous devez être connecté pour activer les notifications push.");
       }
 
       return true;
     } catch (error) {
       console.error('Failed to subscribe to push:', error);
-      alert("Erreur lors de l'activation des notifications push. Vérifiez que vous êtes sur un site sécurisé (HTTPS).");
+      alert("Erreur lors de l'activation : " + error.message);
       return false;
     }
   };

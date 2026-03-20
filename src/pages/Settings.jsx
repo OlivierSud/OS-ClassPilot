@@ -51,8 +51,19 @@ const Settings = () => {
     
     return (
       <div 
-        onClick={onClick}
-        className="bg-white dark:bg-slate-900 rounded-[28px] mb-4 p-4 shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-800 transition-all active:scale-[0.98] cursor-pointer"
+        onClick={(e) => {
+          console.log('SettingItem clicked:', label);
+          if (onClick) onClick(e);
+        }}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (onClick) onClick();
+          }
+        }}
+        className="bg-white dark:bg-slate-900 rounded-[28px] mb-4 p-4 shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-800 transition-all active:scale-[0.98] cursor-pointer hover:border-slate-200 dark:hover:border-slate-700"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -215,6 +226,17 @@ const Settings = () => {
 
       <div className="text-center mt-12 opacity-30">
         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">ClassPilot v1.2.0 • 2026</p>
+      </div>
+      
+      {/* Debug Info (Only for troubleshooting) */}
+      <div className="mt-8 p-4 bg-slate-100 dark:bg-slate-800 rounded-2xl opacity-50 text-[10px] font-mono">
+        <p className="font-bold mb-1 uppercase tracking-widest text-primary">Diagnostic Notifications</p>
+        <div className="grid grid-cols-2 gap-2 text-slate-500 dark:text-slate-400">
+          <div>Permission: {permission}</div>
+          <div>Notification support: {('Notification' in window).toString()}</div>
+          <div>SW support: {('serviceWorker' in navigator).toString()}</div>
+          <div>Secure context: {window.isSecureContext ? 'Oui' : 'Non'}</div>
+        </div>
       </div>
     </div>
   );

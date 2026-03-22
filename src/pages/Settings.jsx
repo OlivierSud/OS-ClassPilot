@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LogOut, Sun, Moon, Bell, ChevronRight, Download, Clock, Calendar, Trash2 } from 'lucide-react';
+import { LogOut, Sun, Moon, Bell, ChevronRight, Download, Clock, Calendar, Trash2, Smartphone } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
 import { usePWA } from '../context/PWAContext';
@@ -14,6 +14,7 @@ const Settings = () => {
     return document.documentElement.classList.contains('dark') || 
            localStorage.getItem('theme') === 'dark';
   });
+  const [showDebug, setShowDebug] = useState(false);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -138,15 +139,8 @@ const Settings = () => {
       />
       <SettingItem 
         icon={Bell} 
-        label="Rappel Quotidien" 
-        type="toggle"
-        isToggled={preferences?.notify_daily}
-        color="var(--primary)" 
-        onClick={() => updatePreferences({ notify_daily: !preferences?.notify_daily })}
-        isDark={isDarkMode}
-      >
-        {preferences?.notify_daily && (
-          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+        label={preferences?.notify_daily ? (
+          <div className="relative group inline-block" onClick={(e) => e.stopPropagation()}>
             {(() => {
               const totalMinutes = preferences?.daily_hour !== undefined 
                 ? (preferences.daily_hour < 24 ? preferences.daily_hour * 60 : preferences.daily_hour) 
@@ -156,7 +150,7 @@ const Settings = () => {
               const timeString = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
               
               return (
-                <div className="relative group min-w-[60px] text-right">
+                <div className="relative">
                   <input 
                     type="time" 
                     value={timeString}
@@ -165,22 +159,24 @@ const Settings = () => {
                       updatePreferences({ daily_hour: newH * 60 + newM });
                     }}
                     className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
-                    style={{ WebkitAppearance: 'none' }}
                   />
-                  <motion.div 
-                    whileTap={{ scale: 0.95 }}
-                    className="cursor-pointer transition-opacity group-hover:opacity-70"
-                  >
-                    <span className="text-[1.1rem] font-black text-primary tracking-tight">
-                      {h.toString().padStart(2, '0')}<span className="animate-pulse mx-0.5 text-primary opacity-50">:</span>{m.toString().padStart(2, '0')}
+                  <div className="flex flex-col">
+                    <span className="text-[1.2rem] font-black text-primary tracking-tight leading-none">
+                      {h.toString().padStart(2, '0')}:{m.toString().padStart(2, '0')}
                     </span>
-                  </motion.div>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Rappel quotidien</span>
+                  </div>
                 </div>
               );
             })()}
           </div>
-        )}
-      </SettingItem>
+        ) : "Rappel Quotidien"} 
+        type="toggle"
+        isToggled={preferences?.notify_daily}
+        color="var(--primary)" 
+        onClick={() => updatePreferences({ notify_daily: !preferences?.notify_daily })}
+        isDark={isDarkMode}
+      />
       <SettingItem 
         icon={Calendar} 
         label="Révision du Lundi" 
@@ -192,7 +188,7 @@ const Settings = () => {
         isDark={isDarkMode}
       />
       <SettingItem 
-        icon={Bell} 
+        icon={Smartphone} 
         label="Push Android" 
         value={permission === 'granted' ? "Activé sur cet appareil" : (permission === 'denied' ? "Bloqué (cliquez pour corriger)" : "Cliquer pour activer")}
         color={permission === 'granted' ? "var(--success)" : (permission === 'denied' ? "var(--error)" : "var(--primary)")} 
@@ -227,22 +223,34 @@ const Settings = () => {
       {/* Diagnostic Logs */}
       {logs.length > 0 && (
         <div className="mt-8 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-200/50 dark:border-slate-800/50">
-          <div className="flex items-center justify-between mb-3">
+          <button 
+            onClick={() => setShowDebug(!showDebug)}
+            className="w-full flex items-center justify-between mb-3"
+          >
             <h3 className="text-[11px] font-black uppercase text-slate-400 tracking-wider">Console de Diagnostic</h3>
-            <button 
-              onClick={() => resetNotificationHistory()}
-              className="text-[10px] font-bold text-primary"
-            >
-              Effacer historique
-            </button>
-          </div>
-          <div className="space-y-1.5 max-h-[150px] overflow-y-auto pr-2">
-            {logs.map((log, i) => (
-              <div key={i} className="text-[11px] font-medium text-slate-600 dark:text-slate-400 font-mono break-all leading-relaxed">
-                {log}
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-bold text-primary">{showDebug ? 'Masquer' : 'Afficher'}</span>
+              <ChevronRight size={14} className={`text-slate-300 transition-transform ${showDebug ? 'rotate-90' : ''}`} />
+            </div>
+          </button>
+          
+          {showDebug && (
+            <div className="space-y-1.5 max-h-[150px] overflow-y-auto pr-2 animate-in fade-in slide-in-from-top-1 duration-300">
+              <div className="flex justify-end mb-2">
+                <button 
+                  onClick={(e) => { e.stopPropagation(); resetNotificationHistory(); }}
+                  className="text-[10px] font-bold text-primary/60 hover:text-primary underline"
+                >
+                  Effacer historique
+                </button>
               </div>
-            ))}
-          </div>
+              {logs.map((log, i) => (
+                <div key={i} className="text-[11px] font-medium text-slate-600 dark:text-slate-400 font-mono break-all leading-relaxed border-l-2 border-slate-200 dark:border-slate-800 pl-2">
+                  {log}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

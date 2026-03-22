@@ -1,13 +1,15 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { addHours, subHours, isWithinInterval } from 'date-fns';
+import { addHours, subHours, isWithinInterval, startOfDay, endOfDay, format } from 'date-fns';
 import { urlBase64ToUint8Array } from '../lib/push';
+import { useUserPreferences } from './useData';
 
 // Use environment variable if available, otherwise use your placeholder
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || 'BCXE6n6giLYrpK1aLCh4BeUchfpyt_8vXcU3MeaaZm0yiUpz_C6dQAlaQBaeyAAInJxdW2kLttoFSiodSIsX9h0';
 
 export function useNotifications() {
   const [permission, setPermission] = useState('Notification' in window ? Notification.permission : 'unsupported');
+  const { preferences } = useUserPreferences();
 
   const subscribeUserToPush = async () => {
     console.log('Attempting to subscribe to push...');
@@ -25,133 +27,203 @@ export function useNotifications() {
     try {
       console.log('Requesting permission...');
       const status = await Notification.requestPermission();
-      console.log('Permission status:', status);
       setPermission(status);
 
-      if (status !== 'granted') {
-        alert("Permission refusée ou ignorée.");
-        return;
-      }
+      if (status !== 'granted') return;
 
-      if (!('serviceWorker' in navigator)) {
-        alert("Les Service Workers ne sont pas supportés ou vous n'êtes pas dans un contexte sécurisé (HTTPS).");
-        return;
-      }
+      if (!('serviceWorker' in navigator)) return;
 
-      console.log('Waiting for SW ready...');
       const registration = await navigator.serviceWorker.ready;
-      console.log('SW ready!');
+      if (!registration.pushManager) return;
 
-      if (!registration.pushManager) {
-        alert("Push Manager non disponible sur ce navigateur.");
-        return;
-      }
-
-      console.log('Subscribing to push manager...');
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
       });
-      console.log('Subscription successful:', subscription);
 
-      // Save/Update subscription to Supabase
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        console.log('Saving subscription for user:', user.id);
         const subJson = subscription.toJSON();
-        
-        const { error } = await supabase
-          .from('push_subscriptions')
-          .insert([{
-            user_id: user.id,
-            subscription: subJson
-          }]);
-          
-        if (error) {
-          console.error('Database error:', error);
-          alert("Erreur lors de l'enregistrement en base de données : " + error.message);
-        } else {
-          alert("Notifications activées avec succès !");
-          console.log('Subscription saved to Supabase');
-        }
-      } else {
-        alert("Vous devez être connecté pour activer les notifications push.");
+        await supabase.from('push_subscriptions').insert([{
+          user_id: user.id,
+          subscription: subJson
+        }]);
+        alert("Notifications activées avec succès !");
       }
-
       return true;
     } catch (error) {
       console.error('Failed to subscribe to push:', error);
-      alert("Erreur lors de l'activation : " + error.message);
       return false;
     }
   };
 
-  const sendTestNotification = () => {
+  const showNotification = useCallback(async (title, options, id) => {
+    // Check if already notified
+    const notified = JSON.parse(localStorage.getItem('cp_notified') || '[]');
+    if (id && notified.includes(id)) return;
+
     if (Notification.permission === 'granted') {
-      new Notification("Test ClassPilot", {
-        body: "Ceci est une notification de test locale. Si vous voyez ceci, les notifications locales fonctionnent !",
-        icon: '/logo_ClassPilot.png'
-      });
-    } else {
-      alert("Permission non accordée. Cliquez sur 'Push Android' pour activer.");
-    }
-  };
-
-  const checkAssignments = useCallback(async () => {
-    if (Notification.permission !== 'granted') return;
-
-    // Check if user is logged in first
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-
-    const now = new Date();
-    const inOneHour = addHours(now, 1);
-    const oneHourAgo = subHours(now, 1);
-
-    const { data, error } = await supabase
-      .from('assignments')
-      .select('title, due_date')
-      .eq('completed', false);
-
-    if (error) {
-      console.error('Error fetching assignments for notifications:', error);
-      return;
-    }
-
-    if (data) {
       const registration = 'serviceWorker' in navigator ? await navigator.serviceWorker.ready : null;
-      
-      data.forEach(asgn => {
-        const dueDate = new Date(asgn.due_date);
-        if (isWithinInterval(dueDate, { start: oneHourAgo, end: inOneHour })) {
-          const title = "Rendu imminent !";
-          const options = {
-            body: `Le devoir "${asgn.title}" est à rendre bientôt.`,
-            icon: `${import.meta.env.BASE_URL}logo_ClassPilot.png`,
-            badge: `${import.meta.env.BASE_URL}logo_ClassPilot.png`
-          };
-          
-          if (registration) {
-            registration.showNotification(title, options);
-          } else {
-            new Notification(title, options);
-          }
-        }
-      });
+      const finalOptions = {
+        icon: '/logo_ClassPilot.png',
+        badge: '/logo_ClassPilot.png',
+        vibrate: [200, 100, 200],
+        ...options
+      };
+
+      if (registration) {
+        registration.showNotification(title, finalOptions);
+      } else {
+        new Notification(title, finalOptions);
+      }
+
+      if (id) {
+        notified.push(id);
+        // Keep only last 50 IDs to avoid bloat
+        if (notified.length > 50) notified.shift();
+        localStorage.setItem('cp_notified', JSON.stringify(notified));
+      }
     }
   }, []);
 
-  useEffect(() => {
-    // Check assignments on load and every 15 minutes
-    checkAssignments();
-    const interval = setInterval(checkAssignments, 15 * 60 * 1000);
+  const checkDailyReminder = useCallback(async () => {
+    if (!preferences?.notify_daily || Notification.permission !== 'granted') return;
 
-    // Update permission state if it changes externally
-    const handlePermissionChange = () => {
-      setPermission(Notification.permission);
-    };
+    const now = new Date();
+    const todayStr = format(now, 'yyyy-MM-dd');
+    const lastDaily = localStorage.getItem('cp_last_daily');
     
-    // Some browsers support the Permissions API
+    if (lastDaily === todayStr) return;
+
+    const dailyHour = preferences.daily_hour !== undefined 
+      ? (preferences.daily_hour < 24 ? preferences.daily_hour * 60 : preferences.daily_hour) 
+      : 18 * 60;
+    
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    if (currentMinutes >= dailyHour) {
+      const todayStart = startOfDay(now).toISOString();
+      const todayEnd = endOfDay(now).toISOString();
+      const tomorrowStart = startOfDay(addDays(now, 1)).toISOString();
+      const tomorrowEnd = endOfDay(addDays(now, 1)).toISOString();
+      const limit48h = endOfDay(addDays(now, 2)).toISOString();
+
+      // Check for ANY event in next 48h (today + 2 days)
+      const { count: cCount } = await supabase
+        .from('courses')
+        .select('*', { count: 'exact', head: true })
+        .gte('start_time', todayStart)
+        .lte('start_time', limit48h);
+
+      const { count: aCount } = await supabase
+        .from('assignments')
+        .select('*', { count: 'exact', head: true })
+        .eq('completed', false)
+        .gte('due_date', todayStart)
+        .lte('due_date', limit48h);
+
+      const totalEventsNext48h = (cCount || 0) + (aCount || 0);
+      
+      if (totalEventsNext48h === 0) {
+        console.log('No events in next 48h, skipping notification.');
+        localStorage.setItem('cp_last_daily', todayStr); // Still mark as checked for today
+        return;
+      }
+
+      // Fetch details for Today
+      const { data: todayCourses } = await supabase
+        .from('courses')
+        .select('title')
+        .gte('start_time', todayStart)
+        .lte('start_time', todayEnd);
+
+      const { data: todayAssignments } = await supabase
+        .from('assignments')
+        .select('title')
+        .eq('completed', false)
+        .gte('due_date', todayStart)
+        .lte('due_date', todayEnd);
+
+      // Fetch details for Tomorrow
+      const { data: tomorrowCourses } = await supabase
+        .from('courses')
+        .select('title')
+        .gte('start_time', tomorrowStart)
+        .lte('start_time', tomorrowEnd);
+
+      let body = "";
+      
+      // Today section
+      if (todayCourses?.length || todayAssignments?.length) {
+        const titles = [
+          ...(todayCourses?.map(c => c.title) || []),
+          ...(todayAssignments?.map(a => `Rendu: ${a.title}`) || [])
+        ];
+        body += `Aujourd'hui : ${titles.join(', ')}. `;
+      } else {
+        body += "Rien de prévu aujourd'hui. ";
+      }
+
+      // Tomorrow section
+      if (tomorrowCourses?.length) {
+        body += `Demain : ${tomorrowCourses.length} cours prévu(s).`;
+      } else if (totalEventsNext48h > (todayCourses?.length || 0) + (todayAssignments?.length || 0)) {
+        body += "Activités prévues après-demain.";
+      }
+
+      showNotification("Votre programme 🎯", { body }, null);
+      localStorage.setItem('cp_last_daily', todayStr);
+    }
+  }, [preferences, showNotification]);
+
+  const checkUpcomingEvents = useCallback(async () => {
+    if (Notification.permission !== 'granted') return;
+
+    const now = new Date();
+    const in30Min = addHours(now, 0.5); // Check for next 30 min
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    // Courses starting soon
+    const { data: courses } = await supabase
+      .from('courses')
+      .select('id, title, start_time')
+      .gte('start_time', now.toISOString())
+      .lte('start_time', in30Min.toISOString());
+
+    courses?.forEach(course => {
+      showNotification("Cours imminent ! 🏫", {
+        body: `Votre cours "${course.title}" commence bientôt.`,
+        tag: `course_${course.id}`
+      }, `course_${course.id}`);
+    });
+
+    // Assignments due soon
+    const { data: assignments } = await supabase
+      .from('assignments')
+      .select('id, title, due_date')
+      .eq('completed', false)
+      .gte('due_date', now.toISOString())
+      .lte('due_date', in30Min.toISOString());
+
+    assignments?.forEach(asgn => {
+      showNotification("Rendu urgent ! ⏳", {
+        body: `Le devoir "${asgn.title}" est à rendre très bientôt.`,
+        tag: `asgn_${asgn.id}`
+      }, `asgn_${asgn.id}`);
+    });
+  }, [showNotification]);
+
+  useEffect(() => {
+    const runChecks = () => {
+      checkUpcomingEvents();
+      checkDailyReminder();
+    };
+
+    runChecks();
+    const interval = setInterval(runChecks, 5 * 60 * 1000); // Check every 5 min
+
+    const handlePermissionChange = () => setPermission(Notification.permission);
     if ('permissions' in navigator) {
       navigator.permissions.query({ name: 'notifications' }).then(status => {
         status.onchange = handlePermissionChange;
@@ -159,7 +231,7 @@ export function useNotifications() {
     }
 
     return () => clearInterval(interval);
-  }, [checkAssignments]);
+  }, [checkUpcomingEvents, checkDailyReminder]);
 
-  return { subscribeUserToPush, sendTestNotification, permission };
+  return { subscribeUserToPush, permission };
 }

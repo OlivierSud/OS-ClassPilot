@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { isThisWeek, endOfWeek, addWeeks } from 'date-fns';
 import { Plus, LogOut, Clock, MapPin, Calendar as CalendarIcon, FileText, BookOpen, Pencil } from 'lucide-react';
 import { formatDate, formatTime } from '../lib/utils';
 import CourseCard from '../components/CourseCard';
@@ -52,9 +53,41 @@ const Dashboard = () => {
         <h2 className="section-title" style={{ fontSize: '1.2rem', marginBottom: '16px' }}>
           Prochains cours
         </h2>
-        {schedule.map(course => (
-          <CourseCard key={course.id} course={course} onInfoClick={handleInfoClick} />
-        ))}
+        {schedule.map(course => {
+          const startDate = new Date(course.start_time);
+          const isWeek = isThisWeek(startDate, { weekStartsOn: 1 });
+          const endOfThisWeek = endOfWeek(today, { weekStartsOn: 1 });
+          const endOfNextWeek = addWeeks(endOfThisWeek, 1);
+          const isAfterNextWeek = startDate > endOfNextWeek;
+
+          return (
+            <div key={course.id} style={{ 
+              marginLeft: isAfterNextWeek ? '20px' : '0',
+              transition: 'margin 0.3s ease',
+              position: 'relative'
+            }}>
+              {isWeek && (
+                <div style={{ 
+                  position: 'absolute', 
+                  top: '-8px', 
+                  right: '12px', 
+                  background: 'var(--accent)', 
+                  color: 'white', 
+                  fontSize: '0.65rem', 
+                  fontWeight: 800, 
+                  padding: '2px 8px', 
+                  borderRadius: '6px',
+                  zIndex: 2,
+                  textTransform: 'uppercase',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}>
+                  Cette semaine
+                </div>
+              )}
+              <CourseCard course={course} onInfoClick={handleInfoClick} />
+            </div>
+          );
+        })}
         {!loadingSchedule && schedule.length === 0 && (
           <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px' }}>
             Aucun cours à venir

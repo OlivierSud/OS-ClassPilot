@@ -157,22 +157,15 @@ const Settings = () => {
               const timeString = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
               
               return (
-                <div className="relative">
-                  <input 
-                    type="time" 
-                    value={timeString}
-                    onChange={(e) => {
-                      const [newH, newM] = e.target.value.split(':').map(Number);
-                      updatePreferences({ daily_hour: newH * 60 + newM });
-                    }}
-                    className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
-                  />
-                  <div className="bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
-                    <span className="text-[0.95rem] font-black text-primary tracking-tight">
-                      {h.toString().padStart(2, '0')}:{m.toString().padStart(2, '0')}
-                    </span>
-                  </div>
-                </div>
+                <input 
+                  type="time" 
+                  value={timeString}
+                  onChange={(e) => {
+                    const [newH, newM] = e.target.value.split(':').map(Number);
+                    updatePreferences({ daily_hour: newH * 60 + newM });
+                  }}
+                  className="form-input !w-24 !py-1 text-center font-bold text-primary bg-primary/5 border-primary/20"
+                />
               );
             })()}
           </div>

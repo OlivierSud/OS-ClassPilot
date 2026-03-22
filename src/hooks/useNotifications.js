@@ -58,12 +58,19 @@ export function useNotifications() {
   };
 
   const showNotification = useCallback(async (title, options, id) => {
+    console.log(`[Diagnostic] Attempting showNotification: "${title}"`, { options, id });
+    
     // Check if already notified
     const notified = JSON.parse(localStorage.getItem('cp_notified') || '[]');
-    if (id && notified.includes(id)) return;
+    if (id && notified.includes(id)) {
+      console.log(`[Diagnostic] ID "${id}" already notified, skipping.`);
+      return;
+    }
 
     if (Notification.permission === 'granted') {
       const registration = 'serviceWorker' in navigator ? await navigator.serviceWorker.ready : null;
+      console.log(`[Diagnostic] SW Registration:`, registration ? 'Found' : 'NOT FOUND');
+
       const finalOptions = {
         icon: '/logo_ClassPilot.png',
         badge: '/logo_ClassPilot.png',
@@ -71,66 +78,92 @@ export function useNotifications() {
         ...options
       };
 
-      if (registration) {
-        registration.showNotification(title, finalOptions);
-      } else {
-        new Notification(title, finalOptions);
-      }
+      try {
+        if (registration) {
+          await registration.showNotification(title, finalOptions);
+          console.log(`[Diagnostic] registration.showNotification called successfully.`);
+        } else {
+          new Notification(title, finalOptions);
+          console.log(`[Diagnostic] fallback new Notification called successfully.`);
+        }
 
-      if (id) {
-        notified.push(id);
-        // Keep only last 50 IDs to avoid bloat
-        if (notified.length > 50) notified.shift();
-        localStorage.setItem('cp_notified', JSON.stringify(notified));
+        if (id) {
+          notified.push(id);
+          if (notified.length > 50) notified.shift();
+          localStorage.setItem('cp_notified', JSON.stringify(notified));
+        }
+      } catch (err) {
+        console.error(`[Diagnostic] Error during showNotification:`, err);
       }
+    } else {
+      console.warn(`[Diagnostic] Permission NOT GRANTED:`, Notification.permission);
     }
   }, []);
 
+  const sendImmediateTest = useCallback(() => {
+    console.log('[Diagnostic] Manual test triggered.');
+    showNotification("Test ClassPilot 🚀", {
+      body: "Si vous voyez ceci, le canal de notification local est opérationnel !",
+    }, null);
+  }, [showNotification]);
+
   const checkDailyReminder = useCallback(async () => {
-    if (!preferences?.notify_daily || Notification.permission !== 'granted') return;
+    if (!preferences?.notify_daily) {
+      console.log('[Diagnostic] Daily reminder disabled in preferences.');
+      return;
+    }
+    if (Notification.permission !== 'granted') {
+      console.log('[Diagnostic] Permission not granted for daily reminder.');
+      return;
+    }
 
     const now = new Date();
     const todayStr = format(now, 'yyyy-MM-dd');
     const lastDaily = localStorage.getItem('cp_last_daily');
     
-    if (lastDaily === todayStr) return;
+    if (lastDaily === todayStr) {
+      console.log('[Diagnostic] Daily reminder already sent for today:', todayStr);
+      return;
+    }
 
     const dailyHour = preferences.daily_hour !== undefined 
       ? (preferences.daily_hour < 24 ? preferences.daily_hour * 60 : preferences.daily_hour) 
       : 18 * 60;
     
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    console.log(`[Diagnostic] Daily Check: now=${currentMinutes}min, target=${dailyHour}min`);
 
     if (currentMinutes >= dailyHour) {
+      console.log('[Diagnostic] It is time! Checking for events in next 48h...');
       const todayStart = startOfDay(now).toISOString();
-      const todayEnd = endOfDay(now).toISOString();
-      const tomorrowStart = startOfDay(addDays(now, 1)).toISOString();
-      const tomorrowEnd = endOfDay(addDays(now, 1)).toISOString();
       const limit48h = endOfDay(addDays(now, 2)).toISOString();
 
-      // Check for ANY event in next 48h (today + 2 days)
-      const { count: cCount } = await supabase
+      const { count: cCount, error: cErr } = await supabase
         .from('courses')
         .select('*', { count: 'exact', head: true })
         .gte('start_time', todayStart)
         .lte('start_time', limit48h);
 
-      const { count: aCount } = await supabase
+      const { count: aCount, error: aErr } = await supabase
         .from('assignments')
         .select('*', { count: 'exact', head: true })
         .eq('completed', false)
         .gte('due_date', todayStart)
         .lte('due_date', limit48h);
 
+      if (cErr || aErr) console.error('[Diagnostic] Supabase Error during 48h check:', cErr || aErr);
+
       const totalEventsNext48h = (cCount || 0) + (aCount || 0);
+      console.log(`[Diagnostic] Events in 48h: ${totalEventsNext48h} (${cCount} courses, ${aCount} assignments)`);
       
       if (totalEventsNext48h === 0) {
-        console.log('No events in next 48h, skipping notification.');
-        localStorage.setItem('cp_last_daily', todayStr); // Still mark as checked for today
+        console.log('[Diagnostic] No events in next 48h, skipping notification.');
+        localStorage.setItem('cp_last_daily', todayStr);
         return;
       }
 
       // Fetch details for Today
+      const todayEnd = endOfDay(now).toISOString();
       const { data: todayCourses } = await supabase
         .from('courses')
         .select('title')
@@ -145,6 +178,8 @@ export function useNotifications() {
         .lte('due_date', todayEnd);
 
       // Fetch details for Tomorrow
+      const tomorrowStart = startOfDay(addDays(now, 1)).toISOString();
+      const tomorrowEnd = endOfDay(addDays(now, 1)).toISOString();
       const { data: tomorrowCourses } = await supabase
         .from('courses')
         .select('title')
@@ -184,6 +219,8 @@ export function useNotifications() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
+    console.log(`[Diagnostic] Checking for upcoming events between ${now.toISOString()} and ${in30Min.toISOString()}`);
+
     // Courses starting soon
     const { data: courses } = await supabase
       .from('courses')
@@ -192,6 +229,7 @@ export function useNotifications() {
       .lte('start_time', in30Min.toISOString());
 
     courses?.forEach(course => {
+      console.log(`[Diagnostic] Found upcoming course: ${course.title}`);
       showNotification("Cours imminent ! 🏫", {
         body: `Votre cours "${course.title}" commence bientôt.`,
         tag: `course_${course.id}`
@@ -207,6 +245,7 @@ export function useNotifications() {
       .lte('due_date', in30Min.toISOString());
 
     assignments?.forEach(asgn => {
+      console.log(`[Diagnostic] Found upcoming assignment: ${asgn.title}`);
       showNotification("Rendu urgent ! ⏳", {
         body: `Le devoir "${asgn.title}" est à rendre très bientôt.`,
         tag: `asgn_${asgn.id}`
@@ -216,6 +255,7 @@ export function useNotifications() {
 
   useEffect(() => {
     const runChecks = () => {
+      console.log('[Diagnostic] Global check interval triggered.');
       checkUpcomingEvents();
       checkDailyReminder();
     };
@@ -233,5 +273,5 @@ export function useNotifications() {
     return () => clearInterval(interval);
   }, [checkUpcomingEvents, checkDailyReminder]);
 
-  return { subscribeUserToPush, permission };
+  return { subscribeUserToPush, sendImmediateTest, permission };
 }

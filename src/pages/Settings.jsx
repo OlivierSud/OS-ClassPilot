@@ -9,7 +9,7 @@ import { useNotifications } from '../hooks/useNotifications';
 const Settings = () => {
   const { isInstallable, installPWA, isInstalled } = usePWA();
   const { preferences, updatePreferences } = useUserPreferences();
-  const { subscribeUserToPush, permission } = useNotifications();
+  const { subscribeUserToPush, sendImmediateTest, permission } = useNotifications();
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return document.documentElement.classList.contains('dark') || 
            localStorage.getItem('theme') === 'dark';
@@ -199,7 +199,19 @@ const Settings = () => {
         onClick={subscribeUserToPush}
         type={permission === 'granted' ? 'info' : 'button'}
         isDark={isDarkMode}
-      />
+      >
+        {permission === 'granted' && (
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              sendImmediateTest();
+            }}
+            className="text-[10px] font-black uppercase text-primary bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-colors"
+          >
+            Tester
+          </button>
+        )}
+      </SettingItem>
       
       {/* Notification test removed */}
 

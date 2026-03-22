@@ -24,6 +24,12 @@ const Dashboard = () => {
 
   const handleInfoClick = (item) => {
     setDetailItem(item);
+    setIsEditing(false);
+  };
+
+  const handleEditClick = (item) => {
+    setDetailItem(item);
+    setIsEditing(true);
   };
 
   const handleLogout = async () => {
@@ -61,21 +67,21 @@ const Dashboard = () => {
           const isAfterNextWeek = startDate > endOfNextWeek;
 
           return (
-            <div key={course.id} style={{ 
+            <div key={course.id} style={{
               marginLeft: isAfterNextWeek ? '20px' : '0',
               transition: 'margin 0.3s ease',
               position: 'relative'
             }}>
               {isWeek && (
-                <div style={{ 
-                  position: 'absolute', 
-                  top: '-8px', 
-                  right: '12px', 
-                  background: 'var(--accent)', 
-                  color: 'white', 
-                  fontSize: '0.65rem', 
-                  fontWeight: 800, 
-                  padding: '2px 8px', 
+                <div style={{
+                  position: 'absolute',
+                  top: '-8px',
+                  right: '12px',
+                  background: 'var(--accent)',
+                  color: 'white',
+                  fontSize: '0.65rem',
+                  fontWeight: 800,
+                  padding: '2px 8px',
                   borderRadius: '6px',
                   zIndex: 2,
                   textTransform: 'uppercase',
@@ -84,7 +90,11 @@ const Dashboard = () => {
                   Cette semaine
                 </div>
               )}
-              <CourseCard course={course} onInfoClick={handleInfoClick} />
+              <CourseCard
+                course={course}
+                onClick={() => handleInfoClick(course)}
+                onEditClick={() => handleEditClick(course)}
+              />
             </div>
           );
         })}
@@ -97,19 +107,24 @@ const Dashboard = () => {
 
       <section style={{ marginTop: '32px' }}>
         <h2 className="section-title" style={{ fontSize: '1.2rem', marginBottom: '16px' }}>
-          Prochains rendus
+          Travaux à rendre
         </h2>
         {assignments.map(assignment => (
-          <AssignmentCard key={assignment.id} assignment={assignment} onInfoClick={handleInfoClick} />
+          <AssignmentCard
+            key={assignment.id}
+            assignment={assignment}
+            onClick={() => handleInfoClick(assignment)}
+            onEditClick={() => handleEditClick(assignment)}
+          />
         ))}
         {!loadingAssignments && assignments.length === 0 && (
           <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px' }}>
-            Félicitations ! Aucun rendu à venir
+            Aucun devoir en attente
           </p>
         )}
       </section>
 
-      <motion.button 
+      <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsAddOpen(true)}

@@ -1,10 +1,10 @@
-import { MapPin, Clock, Info, BookOpen, X } from 'lucide-react';
+import { MapPin, Clock, Pencil, BookOpen, X } from 'lucide-react';
 import { formatTime } from '../lib/utils';
 import { format, isToday } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { motion } from 'framer-motion';
 
-const CourseCard = ({ course, onInfoClick }) => {
+const CourseCard = ({ course, onClick, onEditClick }) => {
   const { title, start_time, end_time, room, type, classes } = course;
   const startDate = new Date(start_time);
   const dateStr = isToday(startDate) 
@@ -17,7 +17,8 @@ const CourseCard = ({ course, onInfoClick }) => {
     <motion.div 
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="card text-white flex flex-col gap-2"
+      onClick={onClick}
+      className={`card text-white flex flex-col gap-2 ${onClick ? 'cursor-pointer' : ''}`}
       style={{ 
         padding: '10px 16px', 
         marginBottom: '12px', 
@@ -67,11 +68,11 @@ const CourseCard = ({ course, onInfoClick }) => {
           </div>
         </div>
         <button 
-          onClick={(e) => { e.stopPropagation(); onInfoClick(course); }}
+          onClick={(e) => { e.stopPropagation(); onEditClick(course); }}
           className="p-1.5 hover:bg-white/10 rounded-full transition-colors"
           style={{ marginTop: '-4px', marginRight: '-4px' }}
         >
-          <Info size={22} color="white" />
+          <Pencil size={22} color="white" />
         </button>
       </div>
     </motion.div>

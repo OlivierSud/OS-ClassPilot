@@ -139,8 +139,15 @@ const Settings = () => {
       />
       <SettingItem 
         icon={Bell} 
-        label={preferences?.notify_daily ? (
-          <div className="relative group inline-block" onClick={(e) => e.stopPropagation()}>
+        label="Rappel Quotidien" 
+        type="toggle"
+        isToggled={preferences?.notify_daily}
+        color="var(--primary)" 
+        onClick={() => updatePreferences({ notify_daily: !preferences?.notify_daily })}
+        isDark={isDarkMode}
+      >
+        {preferences?.notify_daily && (
+          <div className="relative group" onClick={(e) => e.stopPropagation()}>
             {(() => {
               const totalMinutes = preferences?.daily_hour !== undefined 
                 ? (preferences.daily_hour < 24 ? preferences.daily_hour * 60 : preferences.daily_hour) 
@@ -160,23 +167,17 @@ const Settings = () => {
                     }}
                     className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
                   />
-                  <div className="flex flex-col">
-                    <span className="text-[1.2rem] font-black text-primary tracking-tight leading-none">
+                  <div className="bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
+                    <span className="text-[0.95rem] font-black text-primary tracking-tight">
                       {h.toString().padStart(2, '0')}:{m.toString().padStart(2, '0')}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Rappel quotidien</span>
                   </div>
                 </div>
               );
             })()}
           </div>
-        ) : "Rappel Quotidien"} 
-        type="toggle"
-        isToggled={preferences?.notify_daily}
-        color="var(--primary)" 
-        onClick={() => updatePreferences({ notify_daily: !preferences?.notify_daily })}
-        isDark={isDarkMode}
-      />
+        )}
+      </SettingItem>
       <SettingItem 
         icon={Calendar} 
         label="Révision du Lundi" 

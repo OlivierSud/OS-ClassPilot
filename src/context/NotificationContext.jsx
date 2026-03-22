@@ -113,11 +113,25 @@ export function NotificationProvider({ children }) {
   }, [showNotification, addLog]);
 
   const checkDailyReminder = useCallback(async () => {
-    if (!preferences?.notify_daily || Notification.permission !== 'granted') return;
+    if (!preferences) {
+      addLog('Daily check: Attente des préférences...');
+      return;
+    }
+    if (!preferences.notify_daily) {
+      addLog('Daily check: Rappel désactivé dans les options.');
+      return;
+    }
+    if (Notification.permission !== 'granted') {
+      addLog(`Daily check: Permission notifiée: ${Notification.permission}`);
+      return;
+    }
 
     const now = new Date();
     const todayStr = format(now, 'yyyy-MM-dd');
-    if (localStorage.getItem('cp_last_daily') === todayStr) return;
+    if (localStorage.getItem('cp_last_daily') === todayStr) {
+      addLog('Daily check: Déjà envoyé aujourd\'hui.');
+      return;
+    }
 
     const dailyHour = preferences.daily_hour !== undefined 
       ? (preferences.daily_hour < 24 ? preferences.daily_hour * 60 : preferences.daily_hour) 
@@ -164,11 +178,18 @@ export function NotificationProvider({ children }) {
   }, [preferences, showNotification, addLog]);
 
   const checkUpcomingEvents = useCallback(async () => {
-    if (Notification.permission !== 'granted') return;
+    if (Notification.permission !== 'granted') {
+      addLog(`Upcoming check: Permission notifiée: ${Notification.permission}`);
+      return;
+    }
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      addLog('Upcoming check: Pas de session active.');
+      return;
+    }
+
     const now = new Date();
     const in30Min = addHours(now, 0.5);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
 
     try {
       const { data: courses } = await supabase.from('courses').select('id, title, start_time').gte('start_time', now.toISOString()).lte('start_time', in30Min.toISOString());

@@ -19,10 +19,10 @@ const Modal = ({ isOpen, onClose, title, children }) => {
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
             className="fixed inset-0 flex items-center justify-center z-[301] p-4 pointer-events-none"
           >
-            <div className="bg-white rounded-[24px] p-6 w-full max-w-md pointer-events-auto shadow-2xl overflow-hidden">
+            <div className="premium-menu rounded-[24px] p-6 w-full max-w-md pointer-events-auto shadow-2xl overflow-hidden border border-slate-100 dark:border-white/10">
               <div className="flex justify-between items-center mb-6">
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>{title}</h2>
-                <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>{title}</h2>
+                <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-all text-slate-400">
                   <X size={20} />
                 </button>
               </div>

@@ -54,15 +54,15 @@ const QuickAdd = ({ isOpen, onClose, initialData }) => {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed bottom-0 left-0 right-0 bg-white dark:glass rounded-t-[32px] p-8 z-[201] shadow-2xl border-t border-slate-100 dark:border-white/10"
+              className="fixed bottom-0 left-0 right-0 premium-menu rounded-t-[32px] p-8 z-[201] shadow-2xl border-t border-slate-100"
               style={{ maxWidth: '500px', margin: '0 auto' }}
             >
               <div className="flex justify-between items-center mb-8">
                 <div className="flex flex-col gap-1">
-                  <h2 className="text-primary" style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em' }}>Ajouter</h2>
+                  <h2 style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>Ajouter</h2>
                   <p className="text-[12px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">Sélectionnez un type</p>
                 </div>
-                <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-full transition-all active:scale-90 text-slate-400">
+                <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-all active:scale-90 text-slate-400">
                   <X size={24} />
                 </button>
               </div>
@@ -71,18 +71,18 @@ const QuickAdd = ({ isOpen, onClose, initialData }) => {
                 {options.map((opt) => (
                   <button 
                     key={opt.id} 
-                    className="flex items-center gap-5 p-5 hover:bg-slate-50 rounded-[24px] transition-all w-full text-left group active:scale-[0.98] border border-transparent hover:border-slate-100 dark:hover:border-white/5"
+                    className="flex items-center gap-5 p-5 menu-item hover:bg-slate-50 rounded-[24px] w-full text-left group active:scale-[0.98]"
                     onClick={() => handleOptionClick(opt.id)}
                   >
                     <div className={`p-4 rounded-2xl transition-transform group-hover:scale-110 ${
                       opt.id === 'course' 
-                        ? 'bg-primary/10 dark:bg-blue-500/20' 
-                        : 'bg-error/10 dark:bg-red-500/20'
+                        ? 'bg-blue-500/10 dark:bg-blue-500/20' 
+                        : 'bg-red-500/10 dark:bg-red-500/20'
                     }`}>
                       {opt.icon}
                     </div>
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-primary" style={{ fontWeight: 700, fontSize: '1.1rem' }}>{opt.label}</span>
+                      <span style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--text-primary)' }}>{opt.label}</span>
                       <span className="text-[13px] text-slate-500 font-medium">
                         {opt.id === 'course' ? 'Planifier une session' : 'Définir une échéance'}
                       </span>

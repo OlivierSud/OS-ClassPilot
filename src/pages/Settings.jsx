@@ -64,7 +64,7 @@ const Settings = () => {
             if (onClick) onClick();
           }
         }}
-        className="bg-white dark:bg-slate-900 rounded-[28px] mb-4 p-4 shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-800 transition-all active:scale-[0.98] cursor-pointer hover:border-slate-200 dark:hover:border-slate-700"
+        className="bg-white rounded-[28px] mb-4 p-4 shadow-xl shadow-slate-200/40 border border-slate-100 transition-all active:scale-[0.98] cursor-pointer hover:border-slate-200"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -216,7 +216,7 @@ const Settings = () => {
       
       {/* Diagnostic Logs */}
       {logs.length > 0 && (
-        <div className="mt-8 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-200/50 dark:border-slate-800/50">
+        <div className="mt-8 p-4 bg-slate-50 rounded-2xl border border-slate-200">
           <button 
             onClick={() => setShowDebug(!showDebug)}
             className="w-full flex items-center justify-between mb-3"
@@ -224,7 +224,7 @@ const Settings = () => {
             <h3 className="text-[11px] font-black uppercase text-slate-400 tracking-wider">Console de Diagnostic</h3>
             <div className="flex items-center gap-3">
               <span className="text-[10px] font-bold text-primary">{showDebug ? 'Masquer' : 'Afficher'}</span>
-              <ChevronRight size={14} className={`text-slate-300 transition-transform ${showDebug ? 'rotate-90' : ''}`} />
+              <ChevronRight size={14} className={`text-slate-400 transition-transform ${showDebug ? 'rotate-90' : ''}`} />
             </div>
           </button>
           
@@ -239,7 +239,7 @@ const Settings = () => {
                 </button>
               </div>
               {logs.map((log, i) => (
-                <div key={i} className="text-[11px] font-medium text-slate-600 dark:text-slate-400 font-mono break-all leading-relaxed border-l-2 border-slate-200 dark:border-slate-800 pl-2">
+                <div key={i} className="text-[11px] font-medium text-slate-600 font-mono break-all leading-relaxed border-l-2 border-slate-200 pl-2">
                   {log}
                 </div>
               ))}

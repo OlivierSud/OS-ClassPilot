@@ -16,7 +16,7 @@ const AssignmentCard = ({ assignment, onClick, onEditClick }) => {
         borderLeft: '4px solid var(--error)', 
         marginBottom: '12px',
         position: 'relative',
-        background: 'white'
+        background: 'var(--card-bg)'
       }}
     >
       <div className="flex items-start justify-between">
@@ -38,7 +38,7 @@ const AssignmentCard = ({ assignment, onClick, onEditClick }) => {
         </div>
         <button 
           onClick={(e) => { e.stopPropagation(); onEditClick(assignment); }}
-          className="p-1.5 hover:bg-slate-50 rounded-full transition-colors"
+          className="p-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-full transition-colors"
           style={{ marginTop: '-4px', marginRight: '-4px' }}
         >
           <Pencil size={22} className="text-secondary" />

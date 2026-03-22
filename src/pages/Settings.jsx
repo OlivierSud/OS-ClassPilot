@@ -146,41 +146,37 @@ const Settings = () => {
         isDark={isDarkMode}
       >
         {preferences?.notify_daily && (
-          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
             {(() => {
               const totalMinutes = preferences?.daily_hour !== undefined 
                 ? (preferences.daily_hour < 24 ? preferences.daily_hour * 60 : preferences.daily_hour) 
                 : 18 * 60;
               const h = Math.floor(totalMinutes / 60);
               const m = totalMinutes % 60;
+              const timeString = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
               
               return (
-                <>
-                  <select 
-                    value={h}
+                <div className="relative group">
+                  <input 
+                    type="time" 
+                    value={timeString}
                     onChange={(e) => {
-                      const newH = parseInt(e.target.value);
-                      updatePreferences({ daily_hour: newH * 60 + m });
+                      const [newH, newM] = e.target.value.split(':').map(Number);
+                      updatePreferences({ daily_hour: newH * 60 + newM });
                     }}
-                    className="bg-slate-100 dark:bg-slate-800 border-none rounded-xl px-2 py-1.5 text-xs font-black text-primary outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                    className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
+                    style={{ WebkitAppearance: 'none' }}
+                  />
+                  <motion.div 
+                    whileTap={{ scale: 0.95 }}
+                    className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 rounded-[18px] border border-slate-200/50 dark:border-slate-700/50 shadow-sm transition-colors group-hover:bg-slate-200 dark:group-hover:bg-slate-700"
                   >
-                    {[...Array(24).keys()].map(hour => (
-                      <option key={hour} value={hour}>{hour.toString().padStart(2, '0')}h</option>
-                    ))}
-                  </select>
-                  <select 
-                    value={m}
-                    onChange={(e) => {
-                      const newM = parseInt(e.target.value);
-                      updatePreferences({ daily_hour: h * 60 + newM });
-                    }}
-                    className="bg-slate-100 dark:bg-slate-800 border-none rounded-xl px-2 py-1.5 text-xs font-black text-primary outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
-                  >
-                    {[0, 15, 30, 45].map(min => (
-                      <option key={min} value={min}>{min.toString().padStart(2, '0')}</option>
-                    ))}
-                  </select>
-                </>
+                    <Clock size={14} className="text-primary opacity-70" />
+                    <span className="text-[0.9rem] font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                      {h.toString().padStart(2, '0')}<span className="animate-pulse mx-0.5 text-primary opacity-50">:</span>{m.toString().padStart(2, '0')}
+                    </span>
+                  </motion.div>
+                </div>
               );
             })()}
           </div>

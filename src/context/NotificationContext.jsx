@@ -169,7 +169,7 @@ export function NotificationProvider({ children }) {
           .lte('due_date', todayEnd);
 
         const { data: tomorrowC } = await supabase.from('courses')
-          .select('title')
+          .select('title, classes(name)')
           .gte('start_time', startOfDay(addDays(now, 1)).toISOString())
           .lte('start_time', endOfDay(addDays(now, 1)).toISOString());
 
@@ -213,11 +213,28 @@ export function NotificationProvider({ children }) {
     const in30Min = addHours(now, 0.5);
 
     try {
-      const { data: courses } = await supabase.from('courses').select('id, title, start_time').gte('start_time', now.toISOString()).lte('start_time', in30Min.toISOString());
-      courses?.forEach(c => showNotification("Cours imminent ! 🏫", { body: `"${c.title}" commence bientôt.`, tag: `course_${c.id}` }, `course_${c.id}`));
+      const { data: courses } = await supabase.from('courses')
+        .select('id, title, start_time, classes(name)')
+        .gte('start_time', now.toISOString())
+        .lte('start_time', in30Min.toISOString());
+      
+      courses?.forEach(c => showNotification(
+        "Cours imminent ! 🏫", 
+        { body: `"${c.title}" (${c.classes?.name || '?'}) commence bientôt.`, tag: `course_${c.id}` }, 
+        `course_${c.id}`
+      ));
 
-      const { data: assignments } = await supabase.from('assignments').select('id, title, due_date').eq('completed', false).gte('due_date', now.toISOString()).lte('due_date', in30Min.toISOString());
-      assignments?.forEach(a => showNotification("Rendu urgent ! ⏳", { body: `"${a.title}" est à rendre bientôt.`, tag: `asgn_${a.id}` }, `asgn_${a.id}`));
+      const { data: assignments } = await supabase.from('assignments')
+        .select('id, title, due_date, classes(name)')
+        .eq('completed', false)
+        .gte('due_date', now.toISOString())
+        .lte('due_date', in30Min.toISOString());
+      
+      assignments?.forEach(a => showNotification(
+        "Rendu urgent ! ⏳", 
+        { body: `"${a.title}" (${a.classes?.name || '?'}) est à rendre bientôt.`, tag: `asgn_${a.id}` }, 
+        `asgn_${a.id}`
+      ));
     } catch (err) {
       addLog(`Erreur Upcoming: ${err.message}`);
     }

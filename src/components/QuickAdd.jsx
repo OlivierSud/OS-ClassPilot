@@ -54,7 +54,7 @@ const QuickAdd = ({ isOpen, onClose, initialData }) => {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[32px] p-8 z-[201] shadow-2xl"
+              className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[32px] p-8 z-[201] shadow-2xl border-t border-slate-100"
               style={{ maxWidth: '500px', margin: '0 auto' }}
             >
               <div className="flex justify-between items-center mb-6">

@@ -22,7 +22,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
             <div className="bg-white rounded-[24px] p-6 w-full max-w-md pointer-events-auto shadow-2xl overflow-hidden">
               <div className="flex justify-between items-center mb-6">
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>{title}</h2>
-                <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
                   <X size={20} />
                 </button>
               </div>

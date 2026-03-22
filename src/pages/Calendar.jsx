@@ -84,11 +84,11 @@ const Calendar = () => {
           {format(currentDate, 'MMMM yyyy', { locale: fr })}
         </h1>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={handlePrev} style={{ padding: '8px', background: 'white', border: 'none', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', cursor: 'pointer' }}>
-            <ChevronLeft size={20} />
+          <button onClick={handlePrev} className="bg-white dark:bg-slate-800 border-none rounded-xl p-2 shadow-sm cursor-pointer shadow-slate-200/50 dark:shadow-none">
+            <ChevronLeft size={20} className="text-slate-600" />
           </button>
-          <button onClick={handleNext} style={{ padding: '8px', background: 'white', border: 'none', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', cursor: 'pointer' }}>
-            <ChevronRight size={20} />
+          <button onClick={handleNext} className="bg-white dark:bg-slate-800 border-none rounded-xl p-2 shadow-sm cursor-pointer shadow-slate-200/50 dark:shadow-none">
+            <ChevronRight size={20} className="text-slate-600" />
           </button>
         </div>
       </header>
@@ -127,8 +127,8 @@ const Calendar = () => {
                   background: isSelected 
                     ? 'var(--primary)' 
                     : today 
-                      ? 'rgba(99,102,241,0.08)' 
-                      : !isCurrentMonth ? 'rgba(241,245,249,0.5)' : 'transparent',
+                      ? 'var(--primary-light)' 
+                      : !isCurrentMonth ? 'rgba(0,0,0,0.05)' : 'transparent',
                   transition: 'all 0.2s ease',
                   border: isSelected ? 'none' : today ? '1px solid rgba(99,102,241,0.2)' : 'none'
                 }}
@@ -246,11 +246,12 @@ const Calendar = () => {
                   style={{ 
                     display: 'flex', alignItems: 'center', gap: '14px',
                     padding: '14px 16px',
-                    background: 'white',
+                    background: 'var(--card-bg)',
                     borderRadius: '16px',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+                    boxShadow: 'var(--shadow-sm)',
                     cursor: !isCourse ? 'pointer' : 'default',
                     borderLeft: `4px solid ${getDotColor(event.color)}`,
+                    border: '1px solid rgba(255,255,255,0.05)',
                     opacity: isPassed ? 0.6 : 1,
                     filter: isPassed ? 'grayscale(0.8)' : 'none'
                   }}
@@ -301,7 +302,8 @@ const Calendar = () => {
             }) : (
               <div style={{ 
                 textAlign: 'center', padding: '32px 20px', color: 'var(--text-secondary)',
-                background: 'white', borderRadius: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+                background: 'var(--card-bg)', borderRadius: '16px', boxShadow: 'var(--shadow-sm)',
+                border: '1px solid rgba(255,255,255,0.05)',
                 fontSize: '0.9rem'
               }}>
                 Rien de prévu ce jour

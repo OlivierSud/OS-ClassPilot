@@ -58,8 +58,8 @@ const QuickAdd = ({ isOpen, onClose, initialData }) => {
               style={{ maxWidth: '500px', margin: '0 auto' }}
             >
               <div className="flex justify-between items-center mb-6">
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Ajouter</h2>
-                <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                <h2 className="text-primary" style={{ fontSize: '1.25rem', fontWeight: 700 }}>Ajouter</h2>
+                <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
                   <X size={20} />
                 </button>
               </div>
@@ -74,7 +74,7 @@ const QuickAdd = ({ isOpen, onClose, initialData }) => {
                     <div className="bg-slate-50 p-3 rounded-xl">
                       {opt.icon}
                     </div>
-                    <span style={{ fontWeight: 600, fontSize: '1rem' }}>{opt.label}</span>
+                    <span className="text-primary" style={{ fontWeight: 600, fontSize: '1rem' }}>{opt.label}</span>
                   </button>
                 ))}
               </div>

@@ -65,6 +65,10 @@
   color: var(--text-primary);
 }
 
+.dark h1, .dark h2, .dark h3, .dark h4, .dark p, .dark span, .dark label {
+  color: var(--text-primary);
+}
+
 .dark .glass {
   background: rgba(17, 24, 39, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.15);

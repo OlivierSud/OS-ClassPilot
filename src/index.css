@@ -83,8 +83,8 @@
 }
 
 .dark .premium-menu {
-  background: #0f172a; /* Navy profond */
-  border-top-color: rgba(255, 255, 255, 0.1);
+  background: #0f172a !important; /* Navy profond */
+  border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
 }
 
 .menu-item {
@@ -115,6 +115,16 @@
 .dark .view-toggle-btn.active {
   background: #1f2937;
   color: var(--primary);
+}
+
+.dark .bg-white {
+  background-color: var(--card-bg) !important;
+}
+
+.dark .tuile, .dark .card {
+  background-color: var(--card-bg);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .dark .bg-blue-500\/20 { background-color: rgba(59, 130, 246, 0.2); }
@@ -159,7 +169,7 @@
   background-color: #3b82f6; 
   box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
 }
-.dark .text-primary { color: #ffffff; }
+.dark .text-primary { color: #ffffff !important; }
 .dark .bg-secondary { 
   background-color: #fb923c; 
   box-shadow: 0 4px 15px rgba(251, 146, 60, 0.4);

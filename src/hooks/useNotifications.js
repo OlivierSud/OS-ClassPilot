@@ -49,27 +49,28 @@ export function useNotifications() {
           subscription: subJson
         }]);
         alert("Notifications activées avec succès !");
+        addLog("Notifications activées avec succès !");
       }
       return true;
     } catch (error) {
-      console.error('Failed to subscribe to push:', error);
+      addLog(`Échec de l'abonnement aux notifications: ${error.message}`);
       return false;
     }
   };
 
   const showNotification = useCallback(async (title, options, id) => {
-    console.log(`[Diagnostic] Attempting showNotification: "${title}"`, { options, id });
+    addLog(`Tentative notification: "${title}"`);
     
     // Check if already notified
     const notified = JSON.parse(localStorage.getItem('cp_notified') || '[]');
     if (id && notified.includes(id)) {
-      console.log(`[Diagnostic] ID "${id}" already notified, skipping.`);
+      addLog(`ID "${id}" déjà notifié, saut.`);
       return;
     }
 
     if (Notification.permission === 'granted') {
       const registration = 'serviceWorker' in navigator ? await navigator.serviceWorker.ready : null;
-      console.log(`[Diagnostic] SW Registration:`, registration ? 'Found' : 'NOT FOUND');
+      addLog(`SW: ${registration ? 'Connecté' : 'NON TROUVÉ'}`);
 
       const finalOptions = {
         icon: '/logo_ClassPilot.png',
@@ -81,10 +82,10 @@ export function useNotifications() {
       try {
         if (registration) {
           await registration.showNotification(title, finalOptions);
-          console.log(`[Diagnostic] registration.showNotification called successfully.`);
+          addLog(`registration.showNotification succès.`);
         } else {
           new Notification(title, finalOptions);
-          console.log(`[Diagnostic] fallback new Notification called successfully.`);
+          addLog(`fallback showNotification succès.`);
         }
 
         if (id) {
@@ -93,27 +94,27 @@ export function useNotifications() {
           localStorage.setItem('cp_notified', JSON.stringify(notified));
         }
       } catch (err) {
-        console.error(`[Diagnostic] Error during showNotification:`, err);
+        addLog(`ERREUR notification: ${err.message}`);
       }
     } else {
-      console.warn(`[Diagnostic] Permission NOT GRANTED:`, Notification.permission);
+      addLog(`Permission NON ACCORDÉE: ${Notification.permission}`);
     }
-  }, []);
+  }, [addLog]);
 
   const sendImmediateTest = useCallback(() => {
-    console.log('[Diagnostic] Manual test triggered.');
+    addLog('Test manuel déclenché.');
     showNotification("Test ClassPilot 🚀", {
       body: "Si vous voyez ceci, le canal de notification local est opérationnel !",
     }, null);
-  }, [showNotification]);
+  }, [showNotification, addLog]);
 
   const checkDailyReminder = useCallback(async () => {
     if (!preferences?.notify_daily) {
-      console.log('[Diagnostic] Daily reminder disabled in preferences.');
+      addLog('Rappel quotidien désactivé.');
       return;
     }
     if (Notification.permission !== 'granted') {
-      console.log('[Diagnostic] Permission not granted for daily reminder.');
+      addLog('Permission manquante pour rappel.');
       return;
     }
 
@@ -122,7 +123,7 @@ export function useNotifications() {
     const lastDaily = localStorage.getItem('cp_last_daily');
     
     if (lastDaily === todayStr) {
-      console.log('[Diagnostic] Daily reminder already sent for today:', todayStr);
+      addLog(`Déjà envoyé aujourd'hui (${todayStr})`);
       return;
     }
 
@@ -131,85 +132,89 @@ export function useNotifications() {
       : 18 * 60;
     
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    console.log(`[Diagnostic] Daily Check: now=${currentMinutes}min, target=${dailyHour}min`);
+    addLog(`Check Daily: maintenant=${currentMinutes}m, cible=${dailyHour}m`);
 
     if (currentMinutes >= dailyHour) {
-      console.log('[Diagnostic] It is time! Checking for events in next 48h...');
+      addLog('C\'est l\'heure ! Vérification 48h...');
       const todayStart = startOfDay(now).toISOString();
       const limit48h = endOfDay(addDays(now, 2)).toISOString();
 
-      const { count: cCount, error: cErr } = await supabase
-        .from('courses')
-        .select('*', { count: 'exact', head: true })
-        .gte('start_time', todayStart)
-        .lte('start_time', limit48h);
+      try {
+        const { count: cCount, error: cErr } = await supabase
+          .from('courses')
+          .select('*', { count: 'exact', head: true })
+          .gte('start_time', todayStart)
+          .lte('start_time', limit48h);
 
-      const { count: aCount, error: aErr } = await supabase
-        .from('assignments')
-        .select('*', { count: 'exact', head: true })
-        .eq('completed', false)
-        .gte('due_date', todayStart)
-        .lte('due_date', limit48h);
+        const { count: aCount, error: aErr } = await supabase
+          .from('assignments')
+          .select('*', { count: 'exact', head: true })
+          .eq('completed', false)
+          .gte('due_date', todayStart)
+          .lte('due_date', limit48h);
 
-      if (cErr || aErr) console.error('[Diagnostic] Supabase Error during 48h check:', cErr || aErr);
+        if (cErr || aErr) addLog(`Erreur Supabase: ${cErr?.message || aErr?.message}`);
 
-      const totalEventsNext48h = (cCount || 0) + (aCount || 0);
-      console.log(`[Diagnostic] Events in 48h: ${totalEventsNext48h} (${cCount} courses, ${aCount} assignments)`);
-      
-      if (totalEventsNext48h === 0) {
-        console.log('[Diagnostic] No events in next 48h, skipping notification.');
+        const total = (cCount || 0) + (aCount || 0);
+        addLog(`Événements 48h trouvés: ${total}`);
+        
+        if (total === 0) {
+          addLog('Rien dans les 48h, saut.');
+          localStorage.setItem('cp_last_daily', todayStr);
+          return;
+        }
+
+        // Fetch details for Today
+        const todayEnd = endOfDay(now).toISOString();
+        const { data: todayCourses } = await supabase
+          .from('courses')
+          .select('title')
+          .gte('start_time', todayStart)
+          .lte('start_time', todayEnd);
+
+        const { data: todayAssignments } = await supabase
+          .from('assignments')
+          .select('title')
+          .eq('completed', false)
+          .gte('due_date', todayStart)
+          .lte('due_date', todayEnd);
+
+        // Fetch details for Tomorrow
+        const tomorrowStart = startOfDay(addDays(now, 1)).toISOString();
+        const tomorrowEnd = endOfDay(addDays(now, 1)).toISOString();
+        const { data: tomorrowCourses } = await supabase
+          .from('courses')
+          .select('title')
+          .gte('start_time', tomorrowStart)
+          .lte('start_time', tomorrowEnd);
+
+        let body = "";
+        
+        // Today section
+        if (todayCourses?.length || todayAssignments?.length) {
+          const titles = [
+            ...(todayCourses?.map(c => c.title) || []),
+            ...(todayAssignments?.map(a => `Rendu: ${a.title}`) || [])
+          ];
+          body += `Aujourd'hui : ${titles.join(', ')}. `;
+        } else {
+          body += "Rien aujourd'hui. ";
+        }
+
+        // Tomorrow section
+        if (tomorrowCourses?.length) {
+          body += `Demain : ${tomorrowCourses.length} cours prévu(s).`;
+        } else if (total > (todayCourses?.length || 0) + (todayAssignments?.length || 0)) {
+          body += "Activités prévues après-demain.";
+        }
+
+        showNotification("Votre programme 🎯", { body }, null);
         localStorage.setItem('cp_last_daily', todayStr);
-        return;
+      } catch (err) {
+        addLog(`Erreur logic: ${err.message}`);
       }
-
-      // Fetch details for Today
-      const todayEnd = endOfDay(now).toISOString();
-      const { data: todayCourses } = await supabase
-        .from('courses')
-        .select('title')
-        .gte('start_time', todayStart)
-        .lte('start_time', todayEnd);
-
-      const { data: todayAssignments } = await supabase
-        .from('assignments')
-        .select('title')
-        .eq('completed', false)
-        .gte('due_date', todayStart)
-        .lte('due_date', todayEnd);
-
-      // Fetch details for Tomorrow
-      const tomorrowStart = startOfDay(addDays(now, 1)).toISOString();
-      const tomorrowEnd = endOfDay(addDays(now, 1)).toISOString();
-      const { data: tomorrowCourses } = await supabase
-        .from('courses')
-        .select('title')
-        .gte('start_time', tomorrowStart)
-        .lte('start_time', tomorrowEnd);
-
-      let body = "";
-      
-      // Today section
-      if (todayCourses?.length || todayAssignments?.length) {
-        const titles = [
-          ...(todayCourses?.map(c => c.title) || []),
-          ...(todayAssignments?.map(a => `Rendu: ${a.title}`) || [])
-        ];
-        body += `Aujourd'hui : ${titles.join(', ')}. `;
-      } else {
-        body += "Rien de prévu aujourd'hui. ";
-      }
-
-      // Tomorrow section
-      if (tomorrowCourses?.length) {
-        body += `Demain : ${tomorrowCourses.length} cours prévu(s).`;
-      } else if (totalEventsNext48h > (todayCourses?.length || 0) + (todayAssignments?.length || 0)) {
-        body += "Activités prévues après-demain.";
-      }
-
-      showNotification("Votre programme 🎯", { body }, null);
-      localStorage.setItem('cp_last_daily', todayStr);
     }
-  }, [preferences, showNotification]);
+  }, [preferences, showNotification, addLog]);
 
   const checkUpcomingEvents = useCallback(async () => {
     if (Notification.permission !== 'granted') return;
@@ -219,43 +224,47 @@ export function useNotifications() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
-    console.log(`[Diagnostic] Checking for upcoming events between ${now.toISOString()} and ${in30Min.toISOString()}`);
+    addLog(`Vérification des événements à venir entre ${now.toISOString()} et ${in30Min.toISOString()}`);
 
-    // Courses starting soon
-    const { data: courses } = await supabase
-      .from('courses')
-      .select('id, title, start_time')
-      .gte('start_time', now.toISOString())
-      .lte('start_time', in30Min.toISOString());
+    try {
+      // Courses starting soon
+      const { data: courses } = await supabase
+        .from('courses')
+        .select('id, title, start_time')
+        .gte('start_time', now.toISOString())
+        .lte('start_time', in30Min.toISOString());
 
-    courses?.forEach(course => {
-      console.log(`[Diagnostic] Found upcoming course: ${course.title}`);
-      showNotification("Cours imminent ! 🏫", {
-        body: `Votre cours "${course.title}" commence bientôt.`,
-        tag: `course_${course.id}`
-      }, `course_${course.id}`);
-    });
+      courses?.forEach(course => {
+        addLog(`Cours imminent: ${course.title}`);
+        showNotification("Cours imminent ! 🏫", {
+          body: `Votre cours "${course.title}" commence bientôt.`,
+          tag: `course_${course.id}`
+        }, `course_${course.id}`);
+      });
 
-    // Assignments due soon
-    const { data: assignments } = await supabase
-      .from('assignments')
-      .select('id, title, due_date')
-      .eq('completed', false)
-      .gte('due_date', now.toISOString())
-      .lte('due_date', in30Min.toISOString());
+      // Assignments due soon
+      const { data: assignments } = await supabase
+        .from('assignments')
+        .select('id, title, due_date')
+        .eq('completed', false)
+        .gte('due_date', now.toISOString())
+        .lte('due_date', in30Min.toISOString());
 
-    assignments?.forEach(asgn => {
-      console.log(`[Diagnostic] Found upcoming assignment: ${asgn.title}`);
-      showNotification("Rendu urgent ! ⏳", {
-        body: `Le devoir "${asgn.title}" est à rendre très bientôt.`,
-        tag: `asgn_${asgn.id}`
-      }, `asgn_${asgn.id}`);
-    });
-  }, [showNotification]);
+      assignments?.forEach(asgn => {
+        addLog(`Rendu imminent: ${asgn.title}`);
+        showNotification("Rendu urgent ! ⏳", {
+          body: `Le devoir "${asgn.title}" est à rendre très bientôt.`,
+          tag: `asgn_${asgn.id}`
+        }, `asgn_${asgn.id}`);
+      });
+    } catch (err) {
+      addLog(`Erreur CheckUpcoming: ${err.message}`);
+    }
+  }, [showNotification, addLog]);
 
   useEffect(() => {
     const runChecks = () => {
-      console.log('[Diagnostic] Global check interval triggered.');
+      addLog('Vérification automatique...');
       checkUpcomingEvents();
       checkDailyReminder();
     };
@@ -271,14 +280,14 @@ export function useNotifications() {
     }
 
     return () => clearInterval(interval);
-  }, [checkUpcomingEvents, checkDailyReminder]);
+  }, [checkUpcomingEvents, checkDailyReminder, addLog]);
 
   const resetNotificationHistory = useCallback(() => {
     localStorage.removeItem('cp_last_daily');
     localStorage.removeItem('cp_notified');
-    console.log('[Diagnostic] Notification history cleared.');
+    addLog('Historique réinitialisé.');
     alert("Historique des notifications réinitialisé pour aujourd'hui.");
-  }, []);
+  }, [addLog]);
 
-  return { subscribeUserToPush, sendImmediateTest, resetNotificationHistory, permission };
+  return { subscribeUserToPush, sendImmediateTest, resetNotificationHistory, permission, logs };
 }

@@ -9,7 +9,7 @@ import { useNotifications } from '../hooks/useNotifications';
 const Settings = () => {
   const { isInstallable, installPWA, isInstalled } = usePWA();
   const { preferences, updatePreferences } = useUserPreferences();
-  const { subscribeUserToPush, sendImmediateTest, resetNotificationHistory, permission } = useNotifications();
+  const { subscribeUserToPush, sendImmediateTest, resetNotificationHistory, permission, logs } = useNotifications();
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return document.documentElement.classList.contains('dark') || 
            localStorage.getItem('theme') === 'dark';
@@ -224,7 +224,27 @@ const Settings = () => {
         )}
       </SettingItem>
       
-      {/* Notification test removed */}
+      {/* Diagnostic Logs */}
+      {logs.length > 0 && (
+        <div className="mt-8 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-200/50 dark:border-slate-800/50">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-[11px] font-black uppercase text-slate-400 tracking-wider">Console de Diagnostic</h3>
+            <button 
+              onClick={() => resetNotificationHistory()}
+              className="text-[10px] font-bold text-primary"
+            >
+              Effacer historique
+            </button>
+          </div>
+          <div className="space-y-1.5 max-h-[150px] overflow-y-auto pr-2">
+            {logs.map((log, i) => (
+              <div key={i} className="text-[11px] font-medium text-slate-600 dark:text-slate-400 font-mono break-all leading-relaxed">
+                {log}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 mt-8 ml-4">Application</div>
       <SettingItem 

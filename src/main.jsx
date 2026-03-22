@@ -3,11 +3,14 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import { PWAProvider } from './context/PWAContext'
+import { NotificationProvider } from './context/NotificationContext'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <PWAProvider>
-      <App />
+      <NotificationProvider>
+        <App />
+      </NotificationProvider>
     </PWAProvider>
   </StrictMode>,
 )

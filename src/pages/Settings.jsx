@@ -9,7 +9,7 @@ import { useNotifications } from '../hooks/useNotifications';
 const Settings = () => {
   const { isInstallable, installPWA, isInstalled } = usePWA();
   const { preferences, updatePreferences } = useUserPreferences();
-  const { subscribeUserToPush, sendImmediateTest, permission } = useNotifications();
+  const { subscribeUserToPush, sendImmediateTest, resetNotificationHistory, permission } = useNotifications();
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return document.documentElement.classList.contains('dark') || 
            localStorage.getItem('theme') === 'dark';
@@ -201,15 +201,26 @@ const Settings = () => {
         isDark={isDarkMode}
       >
         {permission === 'granted' && (
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              sendImmediateTest();
-            }}
-            className="text-[10px] font-black uppercase text-primary bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-colors"
-          >
-            Tester
-          </button>
+          <div className="flex gap-2">
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                sendImmediateTest();
+              }}
+              className="text-[10px] font-black uppercase text-primary bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-colors"
+            >
+              Tester
+            </button>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                resetNotificationHistory();
+              }}
+              className="text-[10px] font-black uppercase text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            >
+              Reset
+            </button>
+          </div>
         )}
       </SettingItem>
       

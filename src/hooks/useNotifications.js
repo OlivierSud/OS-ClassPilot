@@ -273,5 +273,12 @@ export function useNotifications() {
     return () => clearInterval(interval);
   }, [checkUpcomingEvents, checkDailyReminder]);
 
-  return { subscribeUserToPush, sendImmediateTest, permission };
+  const resetNotificationHistory = useCallback(() => {
+    localStorage.removeItem('cp_last_daily');
+    localStorage.removeItem('cp_notified');
+    console.log('[Diagnostic] Notification history cleared.');
+    alert("Historique des notifications réinitialisé pour aujourd'hui.");
+  }, []);
+
+  return { subscribeUserToPush, sendImmediateTest, resetNotificationHistory, permission };
 }

@@ -156,7 +156,7 @@ const Settings = () => {
               const timeString = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
               
               return (
-                <div className="relative group">
+                <div className="relative group min-w-[60px] text-right">
                   <input 
                     type="time" 
                     value={timeString}
@@ -169,10 +169,9 @@ const Settings = () => {
                   />
                   <motion.div 
                     whileTap={{ scale: 0.95 }}
-                    className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 rounded-[18px] border border-slate-200/50 dark:border-slate-700/50 shadow-sm transition-colors group-hover:bg-slate-200 dark:group-hover:bg-slate-700"
+                    className="cursor-pointer transition-opacity group-hover:opacity-70"
                   >
-                    <Clock size={14} className="text-primary opacity-70" />
-                    <span className="text-[0.9rem] font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                    <span className="text-[1.1rem] font-black text-primary tracking-tight">
                       {h.toString().padStart(2, '0')}<span className="animate-pulse mx-0.5 text-primary opacity-50">:</span>{m.toString().padStart(2, '0')}
                     </span>
                   </motion.div>

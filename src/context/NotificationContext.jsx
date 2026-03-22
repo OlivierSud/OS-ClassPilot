@@ -61,7 +61,8 @@ export function NotificationProvider({ children }) {
   };
 
   const showNotification = useCallback(async (title, options, id) => {
-    addLog(`Notification: "${title}"`);
+    addLog(`Démarrage showNotification: "${title}"`);
+    
     const notified = JSON.parse(localStorage.getItem('cp_notified') || '[]');
     if (id && notified.includes(id)) {
       addLog(`ID "${id}" déjà notifié.`);
@@ -69,28 +70,38 @@ export function NotificationProvider({ children }) {
     }
 
     if (Notification.permission === 'granted') {
-      const registration = 'serviceWorker' in navigator ? await navigator.serviceWorker.ready : null;
-      const finalOptions = {
-        icon: '/logo_ClassPilot.png',
-        badge: '/logo_ClassPilot.png',
-        vibrate: [200, 100, 200],
-        ...options
-      };
-
       try {
+        addLog('Attente ServiceWorker ready...');
+        const registration = 'serviceWorker' in navigator ? await navigator.serviceWorker.ready : null;
+        addLog(`SW trouvé: ${registration ? 'OUI' : 'NON'}`);
+
+        const finalOptions = {
+          icon: '/logo_ClassPilot.png',
+          badge: '/logo_ClassPilot.png',
+          vibrate: [200, 100, 200],
+          ...options
+        };
+
         if (registration) {
+          addLog('Appel registration.showNotification...');
           await registration.showNotification(title, finalOptions);
+          addLog('Succès registration.showNotification');
         } else {
+          addLog('Fallback new Notification...');
           new Notification(title, finalOptions);
+          addLog('Succès fallback');
         }
+
         if (id) {
           notified.push(id);
           if (notified.length > 50) notified.shift();
           localStorage.setItem('cp_notified', JSON.stringify(notified));
         }
       } catch (err) {
-        addLog(`Erreur showNotification: ${err.message}`);
+        addLog(`ERREUR critique notification: ${err.message}`);
       }
+    } else {
+      addLog(`Permission refusée/manquante: ${Notification.permission}`);
     }
   }, [addLog]);
 
@@ -123,27 +134,31 @@ export function NotificationProvider({ children }) {
         const { count: aCount } = await supabase.from('assignments').select('*', { count: 'exact', head: true }).eq('completed', false).gte('due_date', todayStart).lte('due_date', limit48h);
 
         const total = (cCount || 0) + (aCount || 0);
+        addLog(`48h: ${total} events trouvés.`);
+        
         if (total === 0) {
-          addLog('Rien dans les 48h, saut.');
+          addLog('Aucun événement, on marque comme fait.');
           localStorage.setItem('cp_last_daily', todayStr);
           return;
         }
 
-        const { data: todayCourses } = await supabase.from('courses').select('title').gte('start_time', todayStart).lte('start_time', endOfDay(now).toISOString());
-        const { data: todayAssignments } = await supabase.from('assignments').select('title').eq('completed', false).gte('due_date', todayStart).lte('due_date', endOfDay(now).toISOString());
-        const { data: tomorrowCourses } = await supabase.from('courses').select('title').gte('start_time', startOfDay(addDays(now, 1)).toISOString()).lte('start_time', endOfDay(addDays(now, 1)).toISOString());
+        const todayEnd = endOfDay(now).toISOString();
+        const { data: todayC } = await supabase.from('courses').select('title').gte('start_time', todayStart).lte('start_time', todayEnd);
+        const { data: todayA } = await supabase.from('assignments').select('title').eq('completed', false).gte('due_date', todayStart).lte('due_date', todayEnd);
+        const { data: tomorrowC } = await supabase.from('courses').select('title').gte('start_time', startOfDay(addDays(now, 1)).toISOString()).lte('start_time', endOfDay(addDays(now, 1)).toISOString());
 
         let body = "";
-        if (todayCourses?.length || todayAssignments?.length) {
-          const titles = [...(todayCourses?.map(c => c.title) || []), ...(todayAssignments?.map(a => `Rendu: ${a.title}`) || [])];
+        if (todayC?.length || todayA?.length) {
+          const titles = [...(todayC?.map(c => c.title) || []), ...(todayA?.map(a => `Rendu: ${a.title}`) || [])];
           body += `Aujourd'hui : ${titles.join(', ')}. `;
         }
-        if (tomorrowCourses?.length) body += `Demain: ${tomorrowCourses.length} cours.`;
+        if (tomorrowC?.length) body += `Demain: ${tomorrowC.length} cours.`;
 
+        addLog(`Envoi notification: "${body.substring(0, 20)}..."`);
         showNotification("Programme 🎯", { body }, null);
         localStorage.setItem('cp_last_daily', todayStr);
       } catch (err) {
-        addLog(`Erreur Daily: ${err.message}`);
+        addLog(`Erreur trigger Daily: ${err.message}`);
       }
     }
   }, [preferences, showNotification, addLog]);

@@ -157,19 +157,40 @@ export function NotificationProvider({ children }) {
         }
 
         const todayEnd = endOfDay(now).toISOString();
-        const { data: todayC } = await supabase.from('courses').select('title').gte('start_time', todayStart).lte('start_time', todayEnd);
-        const { data: todayA } = await supabase.from('assignments').select('title').eq('completed', false).gte('due_date', todayStart).lte('due_date', todayEnd);
-        const { data: tomorrowC } = await supabase.from('courses').select('title').gte('start_time', startOfDay(addDays(now, 1)).toISOString()).lte('start_time', endOfDay(addDays(now, 1)).toISOString());
+        const { data: todayC } = await supabase.from('courses')
+          .select('title, classes(name)')
+          .gte('start_time', todayStart)
+          .lte('start_time', todayEnd);
 
-        let body = "";
-        if (todayC?.length || todayA?.length) {
-          const titles = [...(todayC?.map(c => c.title) || []), ...(todayA?.map(a => `Rendu: ${a.title}`) || [])];
-          body += `Aujourd'hui : ${titles.join(', ')}. `;
+        const { data: todayA } = await supabase.from('assignments')
+          .select('title, classes(name)')
+          .eq('completed', false)
+          .gte('due_date', todayStart)
+          .lte('due_date', todayEnd);
+
+        const { data: tomorrowC } = await supabase.from('courses')
+          .select('title')
+          .gte('start_time', startOfDay(addDays(now, 1)).toISOString())
+          .lte('start_time', endOfDay(addDays(now, 1)).toISOString());
+
+        let lines = [];
+        if (todayC?.length) {
+          todayC.forEach(c => lines.push(`📚 Cours: ${c.title} (${c.classes?.name || '?'})` ));
         }
-        if (tomorrowC?.length) body += `Demain: ${tomorrowC.length} cours.`;
+        if (todayA?.length) {
+          todayA.forEach(a => lines.push(`⏳ Rendu: ${a.title} (${a.classes?.name || '?'})` ));
+        }
 
-        addLog(`Envoi notification: "${body.substring(0, 20)}..."`);
-        showNotification("Programme 🎯", { body }, null);
+        let body = lines.length > 0 ? lines.join('\n') : "Rien de prévu aujourd'hui. ";
+        
+        if (tomorrowC?.length) {
+          body += `\n\n📌 Demain: ${tomorrowC.length} cours prévu(s).`;
+        } else if (total > (todayC?.length || 0) + (todayA?.length || 0)) {
+          body += "\n\n📌 Activités prévues après-demain.";
+        }
+
+        addLog(`Envoi notification enrichie: ${lines.length} items`);
+        showNotification("Votre programme 🎯", { body }, null);
         localStorage.setItem('cp_last_daily', todayStr);
       } catch (err) {
         addLog(`Erreur trigger Daily: ${err.message}`);

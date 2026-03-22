@@ -4,7 +4,8 @@ import {
   Clock,
   FileText,
   AlertCircle,
-  Plus
+  Plus,
+  X
 } from 'lucide-react';
 import { 
   format, 
@@ -236,6 +237,8 @@ const Calendar = () => {
                 ? `${format(startTime, 'HH:mm')} – ${format(endTime, 'HH:mm')}`
                 : format(startTime, 'HH:mm');
 
+              const isPassed = isCourse && endTime && endTime < new Date();
+
               return (
                 <div 
                   key={event.id}
@@ -247,15 +250,27 @@ const Calendar = () => {
                     borderRadius: '16px',
                     boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
                     cursor: !isCourse ? 'pointer' : 'default',
-                    borderLeft: `4px solid ${getDotColor(event.color)}`
+                    borderLeft: `4px solid ${getDotColor(event.color)}`,
+                    opacity: isPassed ? 0.6 : 1,
+                    filter: isPassed ? 'grayscale(0.8)' : 'none'
                   }}
                 >
                   <div style={{ 
                     flexShrink: 0, width: '40px', height: '40px', borderRadius: '12px', 
                     background: event.color || 'var(--grad-primary)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    position: 'relative'
                   }}>
-                    {isCourse ? <Clock size={18} color="white" /> : <FileText size={18} color="white" />}
+                    {isCourse ? (
+                      <>
+                        <Clock size={18} color="white" />
+                        {isPassed && (
+                          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <X size={28} color="#ef4444" strokeWidth={3} style={{ opacity: 0.9 }} />
+                          </div>
+                        )}
+                      </>
+                    ) : <FileText size={18} color="white" />}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '0.9rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

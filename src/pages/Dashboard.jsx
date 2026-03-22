@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { Plus, LogOut, Clock, MapPin, Calendar as CalendarIcon, FileText, BookOpen } from 'lucide-react';
+import { Plus, LogOut, Clock, MapPin, Calendar as CalendarIcon, FileText, BookOpen, Pencil } from 'lucide-react';
 import { formatDate, formatTime } from '../lib/utils';
 import CourseCard from '../components/CourseCard';
 import AssignmentCard from '../components/AssignmentCard';
+import CourseForm from '../components/CourseForm';
+import AssignmentForm from '../components/AssignmentForm';
 import QuickAdd from '../components/QuickAdd';
 import Modal from '../components/Modal';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,6 +16,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [detailItem, setDetailItem] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const { courses: schedule, loading: loadingSchedule } = useUpcomingCoursesPerClass();
   const { assignments, loading: loadingAssignments } = useUpcomingAssignments();
   const today = new Date();
@@ -95,84 +98,112 @@ const Dashboard = () => {
 
       <Modal 
         isOpen={!!detailItem} 
-        onClose={() => setDetailItem(null)}
-        title={detailItem?.end_time ? "Détails du cours" : "Détails du rendu"}
+        onClose={() => { setDetailItem(null); setIsEditing(false); }}
+        title={isEditing 
+          ? (detailItem?.end_time ? "Modifier le cours" : "Modifier le rendu")
+          : (detailItem?.end_time ? "Détails du cours" : "Détails du rendu")
+        }
       >
         {detailItem && (
           <div className="flex flex-col gap-6">
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-secondary">
-                <BookOpen size={18} />
-                <span style={{ fontWeight: 700, fontSize: '0.9rem', textTransform: 'uppercase' }}>
-                  {detailItem.classes?.name}
-                </span>
-              </div>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 800, lineHeight: 1.2 }}>
-                {detailItem.title}
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4">
-              {detailItem.start_time && (
-                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
-                  <div className="bg-white p-2 rounded-xl border border-slate-100 shadow-sm">
-                    <CalendarIcon size={20} className="text-secondary" />
+            {!isEditing ? (
+              <>
+                <div className="flex flex-col gap-2 relative">
+                  <div className="flex items-center gap-2 text-secondary">
+                    <BookOpen size={18} />
+                    <span style={{ fontWeight: 700, fontSize: '0.9rem', textTransform: 'uppercase' }}>
+                      {detailItem.classes?.name}
+                    </span>
                   </div>
-                  <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Date</div>
-                    <div style={{ fontWeight: 600 }}>{formatDate(new Date(detailItem.start_time))}</div>
-                  </div>
+                  <h2 style={{ fontSize: '1.5rem', fontWeight: 800, lineHeight: 1.2, paddingRight: '40px' }}>
+                    {detailItem.title}
+                  </h2>
+                  <button 
+                    onClick={() => setIsEditing(true)}
+                    className="absolute top-0 right-0 p-2 bg-slate-50 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-primary"
+                    title="Modifier"
+                  >
+                    <Pencil size={20} />
+                  </button>
                 </div>
-              )}
 
-              {detailItem.start_time && (
-                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
-                  <div className="bg-white p-2 rounded-xl border border-slate-100 shadow-sm">
-                    <Clock size={20} className="text-primary" />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Horaire</div>
-                    <div style={{ fontWeight: 600 }}>{formatTime(detailItem.start_time)} - {formatTime(detailItem.end_time)}</div>
-                  </div>
-                </div>
-              )}
+                <div className="grid grid-cols-1 gap-4">
+                  {detailItem.start_time && (
+                    <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
+                      <div className="bg-white p-2 rounded-xl border border-slate-100 shadow-sm">
+                        <CalendarIcon size={20} className="text-secondary" />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Date</div>
+                        <div style={{ fontWeight: 600 }}>{formatDate(new Date(detailItem.start_time))}</div>
+                      </div>
+                    </div>
+                  )}
 
-              {detailItem.due_date && (
-                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
-                  <div className="bg-white p-2 rounded-xl border border-slate-100 shadow-sm">
-                    <CalendarIcon size={20} className="text-error" />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Échéance</div>
-                    <div style={{ fontWeight: 600 }}>{formatDate(new Date(detailItem.due_date))}</div>
-                  </div>
-                </div>
-              )}
+                  {detailItem.start_time && (
+                    <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
+                      <div className="bg-white p-2 rounded-xl border border-slate-100 shadow-sm">
+                        <Clock size={20} className="text-primary" />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Horaire</div>
+                        <div style={{ fontWeight: 600 }}>{formatTime(detailItem.start_time)} - {formatTime(detailItem.end_time)}</div>
+                      </div>
+                    </div>
+                  )}
 
-              {detailItem.room && (
-                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
-                  <div className="bg-white p-2 rounded-xl border border-slate-100 shadow-sm">
-                    <MapPin size={20} className="text-accent" />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Lieu / Salle</div>
-                    <div style={{ fontWeight: 600 }}>Salle {detailItem.room}</div>
-                  </div>
-                </div>
-              )}
+                  {detailItem.due_date && (
+                    <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
+                      <div className="bg-white p-2 rounded-xl border border-slate-100 shadow-sm">
+                        <CalendarIcon size={20} className="text-error" />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Échéance</div>
+                        <div style={{ fontWeight: 600 }}>{formatDate(new Date(detailItem.due_date))}</div>
+                      </div>
+                    </div>
+                  )}
 
-              {detailItem.description && (
-                <div className="flex flex-col gap-2 p-4 bg-slate-50 rounded-2xl">
-                  <div className="flex items-center gap-2" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                    <FileText size={16} />
-                    <span>Description</span>
-                  </div>
-                  <p style={{ fontSize: '0.95rem', lineHeight: 1.5, color: 'var(--text-primary)' }}>
-                    {detailItem.description}
-                  </p>
+                  {detailItem.room && (
+                    <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
+                      <div className="bg-white p-2 rounded-xl border border-slate-100 shadow-sm">
+                        <MapPin size={20} className="text-accent" />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Lieu / Salle</div>
+                        <div style={{ fontWeight: 600 }}>Salle {detailItem.room}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {detailItem.description && (
+                    <div className="flex flex-col gap-2 p-4 bg-slate-50 rounded-2xl">
+                      <div className="flex items-center gap-2" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        <FileText size={16} />
+                        <span>Description</span>
+                      </div>
+                      <p style={{ fontSize: '0.95rem', lineHeight: 1.5, color: 'var(--text-primary)' }}>
+                        {detailItem.description}
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </>
+            ) : (
+              detailItem.end_time ? (
+                <CourseForm 
+                  initialData={detailItem} 
+                  onClose={() => setIsEditing(false)} 
+                  onSuccess={() => window.location.reload()} 
+                />
+              ) : (
+                <AssignmentForm 
+                  initialData={detailItem} 
+                  onClose={() => setIsEditing(false)} 
+                  onSuccess={() => window.location.reload()} 
+                />
+              )
+            )}
           </div>
         )}
       </Modal>

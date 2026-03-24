@@ -180,15 +180,13 @@ export function useWeeklyCourses() {
   useEffect(() => {
     async function fetchWeekly() {
       const now = new Date();
-      // On commence à lundi 00:00
-      const monday = startOfWeek(now, { weekStartsOn: 1 });
-      // Jusqu'à dimanche 23:59:59 (le défaut de endOfWeek avec weekStartsOn 1 est dimanche soir)
+      // Jusqu'à dimanche 23:59:59
       const sunday = endOfWeek(now, { weekStartsOn: 1 });
       
       const { data, error } = await supabase
         .from('courses')
         .select('*, classes(name, color)')
-        .gte('start_time', monday.toISOString())
+        .gte('end_time', now.toISOString())
         .lte('start_time', sunday.toISOString())
         .order('start_time', { ascending: true });
       

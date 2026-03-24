@@ -20,8 +20,8 @@ const CourseCard = ({ course, onClick, onEditClick }) => {
       onClick={onClick}
       className={`card text-white flex flex-col gap-2 ${onClick ? 'cursor-pointer' : ''}`}
       style={{ 
-        padding: '10px 16px', 
-        marginBottom: '12px', 
+        padding: '8px 12px', 
+        marginBottom: '8px', 
         position: 'relative',
         background: classes?.color || 'var(--grad-primary)',
         border: 'none',
@@ -32,7 +32,7 @@ const CourseCard = ({ course, onClick, onEditClick }) => {
     >
       <div className="flex items-start justify-between">
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="flex items-center gap-8" style={{ marginBottom: '4px' }}>
+          <div className="flex items-center gap-6" style={{ marginBottom: '2px' }}>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Clock size={16} opacity={0.9} />
               {isPassed && (
@@ -45,7 +45,7 @@ const CourseCard = ({ course, onClick, onEditClick }) => {
               <h3 style={{ fontSize: '1.25rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>
                 {classes?.name || 'Matière'}
               </h3>
-              <span style={{ fontSize: '0.85rem', fontWeight: 600, opacity: 0.8, textTransform: 'lowercase' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: 600, opacity: 0.8, textTransform: 'lowercase' }}>
                 · {dateStr}
               </span>
             </div>
@@ -55,7 +55,7 @@ const CourseCard = ({ course, onClick, onEditClick }) => {
               <p style={{ fontSize: '1rem', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {title}
               </p>
-              <span style={{ fontSize: '0.9rem', fontWeight: 800, opacity: 0.9 }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 800, opacity: 0.9 }}>
                 · {formatTime(start_time)} - {formatTime(end_time)}
               </span>
             </div>

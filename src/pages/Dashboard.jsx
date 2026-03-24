@@ -51,7 +51,7 @@ const Dashboard = () => {
         </button>
       </header>
 
-      <section style={{ marginTop: '24px' }}>
+      <section style={{ marginTop: '16px' }}>
         <h2 className="section-title" style={{ fontSize: '1.2rem', marginBottom: '16px' }}>
           Cours de la semaine
         </h2>
@@ -66,7 +66,7 @@ const Dashboard = () => {
       </section>
 
       {futureCourses.length > 0 && (
-        <section style={{ marginTop: '32px' }}>
+        <section style={{ marginTop: '20px' }}>
           <h2 className="section-title" style={{ fontSize: '1.2rem', marginBottom: '16px' }}>
             Prochains cours
           </h2>
@@ -76,7 +76,7 @@ const Dashboard = () => {
         </section>
       )}
 
-      <section style={{ marginTop: '32px' }}>
+      <section style={{ marginTop: '20px' }}>
         <h2 className="section-title" style={{ fontSize: '1.2rem', marginBottom: '16px' }}>
           Prochains rendus
         </h2>
@@ -99,7 +99,7 @@ const Dashboard = () => {
           width: '100%', 
           padding: '16px', 
           borderRadius: 'var(--radius-md)',
-          marginTop: '32px',
+          marginTop: '20px',
           fontWeight: 600,
           boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
         }}

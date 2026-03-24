@@ -14,9 +14,10 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [detailItem, setDetailItem] = useState(null);
-  const { courses: schedule, loading: loadingSchedule } = useUpcomingCoursesPerClass();
-  const { courses: weeklyCourses, loading: loadingWeekly } = useWeeklyCourses();
-  const { assignments, loading: loadingAssignments } = useUpcomingAssignments();
+  const { courses: schedule, loading: loadingSchedule, refresh: refreshUpcoming } = useUpcomingCoursesPerClass();
+  const { courses: weeklyCourses, loading: loadingWeekly, refresh: refreshWeekly } = useWeeklyCourses();
+  const { assignments, loading: loadingAssignments, refresh: refreshAssignments } = useUpcomingAssignments();
+  const [editItem, setEditItem] = useState(null);
 
   // Filter out courses that are already in the weekly section
   const futureCourses = schedule.filter(
@@ -31,6 +32,19 @@ const Dashboard = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/login');
+  };
+
+  const handleEditClick = (item) => {
+    setEditItem(item);
+    setIsAddOpen(true);
+  };
+
+  const handleCloseAdd = () => {
+    setIsAddOpen(false);
+    setEditItem(null);
+    refreshUpcoming();
+    refreshWeekly();
+    refreshAssignments();
   };
 
   return (
@@ -56,7 +70,12 @@ const Dashboard = () => {
           Cours de la semaine
         </h2>
         {weeklyCourses.map(course => (
-          <CourseCard key={course.id} course={course} onInfoClick={handleInfoClick} />
+          <CourseCard 
+            key={course.id} 
+            course={course} 
+            onClick={() => handleInfoClick(course)} 
+            onEditClick={handleEditClick} 
+          />
         ))}
         {!loadingWeekly && weeklyCourses.length === 0 && (
           <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px' }}>
@@ -71,7 +90,12 @@ const Dashboard = () => {
             Prochains cours
           </h2>
           {futureCourses.map(course => (
-            <CourseCard key={course.id} course={course} onInfoClick={handleInfoClick} />
+            <CourseCard 
+              key={course.id} 
+              course={course} 
+              onClick={() => handleInfoClick(course)} 
+              onEditClick={handleEditClick} 
+            />
           ))}
         </section>
       )}
@@ -81,7 +105,12 @@ const Dashboard = () => {
           Prochains rendus
         </h2>
         {assignments.map(assignment => (
-          <AssignmentCard key={assignment.id} assignment={assignment} onInfoClick={handleInfoClick} />
+          <AssignmentCard 
+            key={assignment.id} 
+            assignment={assignment} 
+            onClick={() => handleInfoClick(assignment)} 
+            onEditClick={handleEditClick} 
+          />
         ))}
         {!loadingAssignments && assignments.length === 0 && (
           <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px' }}>
@@ -108,7 +137,7 @@ const Dashboard = () => {
         Ajouter
       </motion.button>
 
-      <QuickAdd isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} />
+      <QuickAdd isOpen={isAddOpen} onClose={handleCloseAdd} initialData={editItem} />
 
       <Modal 
         isOpen={!!detailItem} 

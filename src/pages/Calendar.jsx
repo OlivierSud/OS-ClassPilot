@@ -41,7 +41,7 @@ const Calendar = () => {
     end: endOfWeek(endOfMonth(currentDate), { weekStartsOn: 1 })
   }), [currentDate]);
 
-  const { schedule, loading } = useSchedule(range.start, range.end);
+  const { schedule, loading, refresh } = useSchedule(range.start, range.end);
 
   const days = useMemo(() => eachDayOfInterval({ start: range.start, end: range.end }), [range]);
 
@@ -317,8 +317,7 @@ const Calendar = () => {
         isOpen={isAddOpen} 
         onClose={() => {
           setIsAddOpen(false);
-          // Reload to show new items
-          window.location.reload();
+          refresh();
         }} 
         initialData={addInitialData}
       />

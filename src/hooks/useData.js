@@ -102,46 +102,48 @@ export function useSchedule(startDate, endDate) {
   const [schedule, setSchedule] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  async function fetchSchedule() {
+    if (!startDate || !endDate) return;
+    setLoading(true);
+    
+    // Fetch courses with class info
+    const { data: courses } = await supabase
+      .from('courses')
+      .select('*, classes(name, color)')
+      .gte('start_time', startDate.toISOString())
+      .lte('start_time', endDate.toISOString())
+      .order('start_time', { ascending: true });
+
+    // Fetch assignments (due_date in range) with class info
+    const { data: assignments } = await supabase
+      .from('assignments')
+      .select('*, classes(name, color)')
+      .gte('due_date', startDate.toISOString())
+      .lte('due_date', endDate.toISOString())
+      .order('due_date', { ascending: true });
+
+    const courseItems = (courses || []).map(c => ({
+      ...c,
+      eventType: 'course',
+      color: c.classes?.color || 'var(--grad-primary)'
+    }));
+
+    const assignmentItems = (assignments || []).map(a => ({
+      ...a,
+      eventType: 'assignment',
+      start_time: a.due_date,
+      color: a.classes?.color || 'var(--grad-secondary)'
+    }));
+
+    setSchedule([...courseItems, ...assignmentItems]);
+    setLoading(false);
+  }
+
   useEffect(() => {
-    async function fetchSchedule() {
-      if (!startDate || !endDate) return;
-      
-      // Fetch courses with class info
-      const { data: courses } = await supabase
-        .from('courses')
-        .select('*, classes(name, color)')
-        .gte('start_time', startDate.toISOString())
-        .lte('start_time', endDate.toISOString())
-        .order('start_time', { ascending: true });
-
-      // Fetch assignments (due_date in range) with class info
-      const { data: assignments } = await supabase
-        .from('assignments')
-        .select('*, classes(name, color)')
-        .gte('due_date', startDate.toISOString())
-        .lte('due_date', endDate.toISOString())
-        .order('due_date', { ascending: true });
-
-      const courseItems = (courses || []).map(c => ({
-        ...c,
-        eventType: 'course',
-        color: c.classes?.color || 'var(--grad-primary)'
-      }));
-
-      const assignmentItems = (assignments || []).map(a => ({
-        ...a,
-        eventType: 'assignment',
-        start_time: a.due_date,
-        color: a.classes?.color || 'var(--grad-secondary)'
-      }));
-
-      setSchedule([...courseItems, ...assignmentItems]);
-      setLoading(false);
-    }
     fetchSchedule();
   }, [startDate, endDate]);
 
-  return { schedule, loading };
+  return { schedule, loading, refresh: fetchSchedule };
 }
 
 export function useClassDetail(id) {
@@ -177,90 +179,96 @@ export function useWeeklyCourses() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  async function fetchWeekly() {
+    setLoading(true);
+    const now = new Date();
+    // Jusqu'à dimanche 23:59:59
+    const sunday = endOfWeek(now, { weekStartsOn: 1 });
+    
+    const { data, error } = await supabase
+      .from('courses')
+      .select('*, classes(name, color)')
+      .gte('end_time', now.toISOString())
+      .lte('start_time', sunday.toISOString())
+      .order('start_time', { ascending: true });
+    
+    if (!error) setCourses(data || []);
+    setLoading(false);
+  }
+
   useEffect(() => {
-    async function fetchWeekly() {
-      const now = new Date();
-      // Jusqu'à dimanche 23:59:59
-      const sunday = endOfWeek(now, { weekStartsOn: 1 });
-      
-      const { data, error } = await supabase
-        .from('courses')
-        .select('*, classes(name, color)')
-        .gte('end_time', now.toISOString())
-        .lte('start_time', sunday.toISOString())
-        .order('start_time', { ascending: true });
-      
-      if (!error) setCourses(data || []);
-      setLoading(false);
-    }
     fetchWeekly();
   }, []);
 
-  return { courses, loading };
+  return { courses, loading, refresh: fetchWeekly };
 }
 
 export function useUpcomingCoursesPerClass() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchUpcoming() {
-      const now = new Date().toISOString();
-      
-      const { data: classes } = await supabase.from('classes').select('id, name');
-      
-      if (!classes) {
-        setLoading(false);
-        return;
-      }
-
-      const upcomingPromises = classes.map(cls => 
-        supabase
-          .from('courses')
-          .select('*, classes(name, color)')
-          .eq('class_id', cls.id)
-          .gte('end_time', now) // On le garde tant qu'il n'est pas terminé
-          .order('start_time', { ascending: true })
-          .limit(1)
-          .maybeSingle()
-      );
-
-      const results = await Promise.all(upcomingPromises);
-      const nextCourses = results
-        .map(r => r.data)
-        .filter(Boolean)
-        .sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
-      
-      setCourses(nextCourses);
+  async function fetchUpcoming() {
+    setLoading(true);
+    const now = new Date().toISOString();
+    
+    const { data: classes } = await supabase.from('classes').select('id, name');
+    
+    if (!classes) {
       setLoading(false);
+      return;
     }
+
+    const upcomingPromises = classes.map(cls => 
+      supabase
+        .from('courses')
+        .select('*, classes(name, color)')
+        .eq('class_id', cls.id)
+        .gte('end_time', now) // On le garde tant qu'il n'est pas terminé
+        .order('start_time', { ascending: true })
+        .limit(1)
+        .maybeSingle()
+    );
+
+    const results = await Promise.all(upcomingPromises);
+    const nextCourses = results
+      .map(r => r.data)
+      .filter(Boolean)
+      .sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+    
+    setCourses(nextCourses);
+    setLoading(false);
+  }
+
+  useEffect(() => {
     fetchUpcoming();
   }, []);
 
-  return { courses, loading };
+  return { courses, loading, refresh: fetchUpcoming };
 }
 
 export function useUpcomingAssignments() {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  async function fetchAssignments() {
+    setLoading(true);
+    const now = new Date().toISOString();
+    const { data, error } = await supabase
+      .from('assignments')
+      .select('*, classes(name, color)')
+      .eq('completed', false)
+      .gte('due_date', now) // Uniquement ceux dont la date n'est pas passée
+      .order('due_date', { ascending: true });
+    
+    if (!error) setAssignments(data);
+    setLoading(false);
+  }
+
   useEffect(() => {
-    async function fetchAssignments() {
-      const now = new Date().toISOString();
-      const { data, error } = await supabase
-        .from('assignments')
-        .select('*, classes(name, color)')
-        .eq('completed', false)
-        .gte('due_date', now) // Uniquement ceux dont la date n'est pas passée
-        .order('due_date', { ascending: true });
-      
-      if (!error) setAssignments(data);
-      setLoading(false);
-    }
     fetchAssignments();
   }, []);
 
-  return { assignments, loading };
+  return { assignments, loading, refresh: fetchAssignments };
 }
 
 export function useAssignment(id) {

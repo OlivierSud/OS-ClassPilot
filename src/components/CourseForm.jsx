@@ -30,11 +30,20 @@ const CourseForm = ({ onClose, onSuccess, initialData }) => {
     e.preventDefault();
     setLoading(true);
     
+    const start = new Date(formData.start_time);
+    const end = new Date(formData.end_time);
+
+    if (end <= start) {
+      alert("L'heure de fin doit être après l'heure de début.");
+      setLoading(false);
+      return;
+    }
+
     const payload = {
       title: formData.title,
       class_id: formData.class_id,
-      start_time: new Date(formData.start_time).toISOString(),
-      end_time: new Date(formData.end_time).toISOString()
+      start_time: start.toISOString(),
+      end_time: end.toISOString()
     };
 
     const { error } = formData.id 

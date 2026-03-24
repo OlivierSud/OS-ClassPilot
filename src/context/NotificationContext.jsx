@@ -247,7 +247,7 @@ export function NotificationProvider({ children }) {
       checkDailyReminder();
     };
     runChecks();
-    const interval = setInterval(runChecks, 60 * 1000); // Check every 1 min
+    const interval = setInterval(runChecks, 10 * 60 * 1000); // Check every 10 min
 
     const handlePermissionChange = () => setPermission(Notification.permission);
     if ('permissions' in navigator) {

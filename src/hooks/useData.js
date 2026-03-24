@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { startOfWeek, endOfWeek } from 'date-fns';
 
 export function useClasses() {
   const [classes, setClasses] = useState([]);
@@ -170,6 +171,34 @@ export function useClassDetail(id) {
   }, [id]);
 
   return { classData, loading };
+}
+
+export function useWeeklyCourses() {
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchWeekly() {
+      const now = new Date();
+      // On commence à lundi 00:00
+      const monday = startOfWeek(now, { weekStartsOn: 1 });
+      // Jusqu'à dimanche 23:59:59 (le défaut de endOfWeek avec weekStartsOn 1 est dimanche soir)
+      const sunday = endOfWeek(now, { weekStartsOn: 1 });
+      
+      const { data, error } = await supabase
+        .from('courses')
+        .select('*, classes(name, color)')
+        .gte('start_time', monday.toISOString())
+        .lte('start_time', sunday.toISOString())
+        .order('start_time', { ascending: true });
+      
+      if (!error) setCourses(data || []);
+      setLoading(false);
+    }
+    fetchWeekly();
+  }, []);
+
+  return { courses, loading };
 }
 
 export function useUpcomingCoursesPerClass() {

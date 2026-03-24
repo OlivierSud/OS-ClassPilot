@@ -6,7 +6,7 @@ import AssignmentCard from '../components/AssignmentCard';
 import QuickAdd from '../components/QuickAdd';
 import Modal from '../components/Modal';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUpcomingCoursesPerClass, useUpcomingAssignments } from '../hooks/useData';
+import { useUpcomingCoursesPerClass, useUpcomingAssignments, useWeeklyCourses } from '../hooks/useData';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
@@ -15,7 +15,13 @@ const Dashboard = () => {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [detailItem, setDetailItem] = useState(null);
   const { courses: schedule, loading: loadingSchedule } = useUpcomingCoursesPerClass();
+  const { courses: weeklyCourses, loading: loadingWeekly } = useWeeklyCourses();
   const { assignments, loading: loadingAssignments } = useUpcomingAssignments();
+
+  // Filter out courses that are already in the weekly section
+  const futureCourses = schedule.filter(
+    (course) => !weeklyCourses.some((weekly) => weekly.id === course.id)
+  );
   const today = new Date();
 
   const handleInfoClick = (item) => {
@@ -47,17 +53,28 @@ const Dashboard = () => {
 
       <section style={{ marginTop: '24px' }}>
         <h2 className="section-title" style={{ fontSize: '1.2rem', marginBottom: '16px' }}>
-          Prochains cours
+          Cours de la semaine
         </h2>
-        {schedule.map(course => (
+        {weeklyCourses.map(course => (
           <CourseCard key={course.id} course={course} onInfoClick={handleInfoClick} />
         ))}
-        {!loadingSchedule && schedule.length === 0 && (
+        {!loadingWeekly && weeklyCourses.length === 0 && (
           <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px' }}>
-            Aucun cours à venir
+            Aucun cours cette semaine
           </p>
         )}
       </section>
+
+      {futureCourses.length > 0 && (
+        <section style={{ marginTop: '32px' }}>
+          <h2 className="section-title" style={{ fontSize: '1.2rem', marginBottom: '16px' }}>
+            Prochains cours
+          </h2>
+          {futureCourses.map(course => (
+            <CourseCard key={course.id} course={course} onInfoClick={handleInfoClick} />
+          ))}
+        </section>
+      )}
 
       <section style={{ marginTop: '32px' }}>
         <h2 className="section-title" style={{ fontSize: '1.2rem', marginBottom: '16px' }}>

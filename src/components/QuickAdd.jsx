@@ -60,7 +60,7 @@ const QuickAdd = ({ isOpen, onClose, initialData }) => {
               <div className="flex justify-between items-center mb-8">
                 <div className="flex flex-col gap-1">
                   <h2 style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>Ajouter</h2>
-                  <p className="text-[12px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">Sélectionnez un type</p>
+                  <p className="text-[12px] font-medium text-slate-400 dark:text-slate-300 uppercase tracking-wider">Sélectionnez un type</p>
                 </div>
                 <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-all active:scale-90 text-slate-400">
                   <X size={24} />

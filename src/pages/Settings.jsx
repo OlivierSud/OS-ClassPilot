@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LogOut, Sun, Moon, Bell, ChevronRight, Download, Clock, Calendar, Trash2 } from 'lucide-react';
+import { LogOut, Sun, Moon, Bell, ChevronRight, Download, Clock, Calendar, Trash2, Smartphone } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
 import { usePWA } from '../context/PWAContext';
@@ -9,11 +9,12 @@ import { useNotifications } from '../hooks/useNotifications';
 const Settings = () => {
   const { isInstallable, installPWA, isInstalled } = usePWA();
   const { preferences, updatePreferences } = useUserPreferences();
-  const { subscribeUserToPush, permission } = useNotifications();
+  const { subscribeUserToPush, sendImmediateTest, resetNotificationHistory, permission, logs } = useNotifications();
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return document.documentElement.classList.contains('dark') || 
            localStorage.getItem('theme') === 'dark';
   });
+  const [showDebug, setShowDebug] = useState(false);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -63,7 +64,7 @@ const Settings = () => {
             if (onClick) onClick();
           }
         }}
-        className="bg-white dark:bg-slate-900 rounded-[28px] mb-4 p-4 shadow-xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-slate-800 transition-all active:scale-[0.98] cursor-pointer hover:border-slate-200 dark:hover:border-slate-700"
+        className="bg-white rounded-[28px] mb-4 p-4 shadow-xl shadow-slate-200/40 border border-slate-100 transition-all active:scale-[0.98] cursor-pointer hover:border-slate-200"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -146,15 +147,28 @@ const Settings = () => {
         isDark={isDarkMode}
       >
         {preferences?.notify_daily && (
-          <select 
-            value={preferences?.daily_hour}
-            onChange={(e) => updatePreferences({ daily_hour: parseInt(e.target.value) })}
-            className="bg-slate-50 dark:bg-slate-800 border-none rounded-xl px-2 py-1 text-xs font-black text-primary outline-none"
-          >
-            {[8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].map(h => (
-              <option key={h} value={h}>{h}h00</option>
-            ))}
-          </select>
+          <div className="relative group" onClick={(e) => e.stopPropagation()}>
+            {(() => {
+              const totalMinutes = preferences?.daily_hour !== undefined 
+                ? (preferences.daily_hour < 24 ? preferences.daily_hour * 60 : preferences.daily_hour) 
+                : 18 * 60;
+              const h = Math.floor(totalMinutes / 60);
+              const m = totalMinutes % 60;
+              const timeString = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+              
+              return (
+                <input 
+                  type="time" 
+                  value={timeString}
+                  onChange={(e) => {
+                    const [newH, newM] = e.target.value.split(':').map(Number);
+                    updatePreferences({ daily_hour: newH * 60 + newM });
+                  }}
+                  className="form-input !w-24 !py-1 text-center font-bold text-primary bg-primary/5 border-primary/20"
+                />
+              );
+            })()}
+          </div>
         )}
       </SettingItem>
       <SettingItem 
@@ -168,48 +182,70 @@ const Settings = () => {
         isDark={isDarkMode}
       />
       <SettingItem 
-        icon={Bell} 
+        icon={Smartphone} 
         label="Push Android" 
         value={permission === 'granted' ? "Activé sur cet appareil" : (permission === 'denied' ? "Bloqué (cliquez pour corriger)" : "Cliquer pour activer")}
         color={permission === 'granted' ? "var(--success)" : (permission === 'denied' ? "var(--error)" : "var(--primary)")} 
         onClick={subscribeUserToPush}
         type={permission === 'granted' ? 'info' : 'button'}
         isDark={isDarkMode}
-      />
+      >
+        {permission === 'granted' && (
+          <div className="flex gap-2">
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                sendImmediateTest();
+              }}
+              className="text-[10px] font-black uppercase text-primary bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-colors"
+            >
+              Tester
+            </button>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                resetNotificationHistory();
+              }}
+              className="text-[10px] font-black uppercase text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            >
+              Reset
+            </button>
+          </div>
+        )}
+      </SettingItem>
       
-      {permission === 'granted' && (
-        <SettingItem 
-          icon={Bell} 
-          label="Tester les notifications" 
-          value="Cliquez pour envoyer un test"
-          color="#f59e0b" 
-          onClick={async () => {
-            console.log('Test notification clicked');
-            try {
-              if ('serviceWorker' in navigator) {
-                const registration = await navigator.serviceWorker.ready;
-                registration.showNotification("Test ClassPilot", {
-                  body: "Félicitations ! Les notifications de ClassPilot fonctionnent sur cet appareil via le Service Worker.",
-                  icon: `${import.meta.env.BASE_URL}logo_ClassPilot.png`,
-                  badge: `${import.meta.env.BASE_URL}logo_ClassPilot.png`,
-                  vibrate: [200, 100, 200],
-                  tag: 'test-notification'
-                });
-                console.log('Test notification shown via SW');
-              } else if (window.Notification) {
-                new Notification("Test ClassPilot", {
-                  body: "Ceci est un test en mode direct (SW non dispo).",
-                  icon: `${import.meta.env.BASE_URL}logo_ClassPilot.png`
-                });
-              }
-            } catch (err) {
-              console.error('Test notification failed:', err);
-              alert("Impossible d'afficher la notification : " + err.message);
-            }
-          }}
-          type="button"
-          isDark={isDarkMode}
-        />
+      {/* Diagnostic Logs */}
+      {logs.length > 0 && (
+        <div className="mt-8 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+          <button 
+            onClick={() => setShowDebug(!showDebug)}
+            className="w-full flex items-center justify-between mb-3"
+          >
+            <h3 className="text-[11px] font-black uppercase text-slate-400 tracking-wider">Console de Diagnostic</h3>
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-bold text-primary">{showDebug ? 'Masquer' : 'Afficher'}</span>
+              <ChevronRight size={14} className={`text-slate-400 transition-transform ${showDebug ? 'rotate-90' : ''}`} />
+            </div>
+          </button>
+          
+          {showDebug && (
+            <div className="space-y-1.5 max-h-[150px] overflow-y-auto pr-2 animate-in fade-in slide-in-from-top-1 duration-300">
+              <div className="flex justify-end mb-2">
+                <button 
+                  onClick={(e) => { e.stopPropagation(); resetNotificationHistory(); }}
+                  className="text-[10px] font-bold text-primary/60 hover:text-primary underline"
+                >
+                  Effacer historique
+                </button>
+              </div>
+              {logs.map((log, i) => (
+                <div key={i} className="text-[11px] font-medium text-slate-600 font-mono break-all leading-relaxed border-l-2 border-slate-200 pl-2">
+                  {log}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 mt-8 ml-4">Application</div>
@@ -244,16 +280,7 @@ const Settings = () => {
         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">ClassPilot v1.2.0 • 2026</p>
       </div>
       
-      {/* Debug Info (Only for troubleshooting) */}
-      <div className="mt-8 p-4 bg-slate-100 dark:bg-slate-800 rounded-2xl opacity-50 text-[10px] font-mono">
-        <p className="font-bold mb-1 uppercase tracking-widest text-primary">Diagnostic Notifications</p>
-        <div className="grid grid-cols-2 gap-2 text-slate-500 dark:text-slate-400">
-          <div>Permission: {permission}</div>
-          <div>Notification support: {('Notification' in window).toString()}</div>
-          <div>SW support: {('serviceWorker' in navigator).toString()}</div>
-          <div>Secure context: {window.isSecureContext ? 'Oui' : 'Non'}</div>
-        </div>
-      </div>
+      {/* Diagnostic tool removed */}
     </div>
   );
 };

@@ -359,8 +359,10 @@ const ClassDetail = () => {
               const startStr = start.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
               const endStr = end.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
+              const isPassed = end < new Date();
+
               return (
-                <div key={course.id} style={{ borderBottom: index === courses.length - 1 ? 'none' : '1px solid #f1f5f9' }}>
+                <div key={course.id} style={{ borderBottom: index === courses.length - 1 ? 'none' : '1px solid #f1f5f9', opacity: isPassed ? 0.6 : 1, filter: isPassed ? 'grayscale(0.8)' : 'none' }}>
                   {editingCourse && editingCourse.id === course.id ? (
                     <form onSubmit={handleSaveEditCourse} style={{ padding: '16px', background: 'rgba(248,250,252,0.5)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -388,8 +390,13 @@ const ClassDetail = () => {
                     </form>
                   ) : (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px' }}>
-                      <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: 'var(--primary-light, rgba(99,102,241,0.08))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: 'var(--primary-light, rgba(99,102,241,0.08))', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                         <Clock size={16} color="var(--primary)" />
+                        {isPassed && (
+                          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <X size={24} color="#ef4444" strokeWidth={3} style={{ opacity: 0.8 }} />
+                          </div>
+                        )}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: '0.9rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{course.title}</div>

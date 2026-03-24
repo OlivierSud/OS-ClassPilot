@@ -1,21 +1,22 @@
-import { Calendar, Info, BookOpen } from 'lucide-react';
+import { Calendar, Pencil, BookOpen } from 'lucide-react';
 import { getTimeRemaining } from '../lib/utils';
 import { motion } from 'framer-motion';
 
-const AssignmentCard = ({ assignment, onInfoClick }) => {
+const AssignmentCard = ({ assignment, onClick, onEditClick }) => {
   const { title, due_date, classes } = assignment;
 
   return (
     <motion.div 
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      className="card flex flex-col gap-2"
+      onClick={onClick}
+      className={`card flex flex-col gap-2 ${onClick ? 'cursor-pointer' : ''}`}
       style={{ 
         padding: '10px 16px', 
         borderLeft: '4px solid var(--error)', 
         marginBottom: '12px',
         position: 'relative',
-        background: 'white'
+        background: 'var(--card-bg)'
       }}
     >
       <div className="flex items-start justify-between">
@@ -36,11 +37,11 @@ const AssignmentCard = ({ assignment, onInfoClick }) => {
           </div>
         </div>
         <button 
-          onClick={(e) => { e.stopPropagation(); onInfoClick(assignment); }}
-          className="p-1.5 hover:bg-slate-50 rounded-full transition-colors"
+          onClick={(e) => { e.stopPropagation(); onEditClick(assignment); }}
+          className="p-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-full transition-colors"
           style={{ marginTop: '-4px', marginRight: '-4px' }}
         >
-          <Info size={22} className="text-secondary" />
+          <Pencil size={22} className="text-secondary" />
         </button>
       </div>
       

@@ -18,7 +18,6 @@ const Visionneuse = () => {
   const [pdfDoc, setPdfDoc] = useState(null);
   const [pageNum, setPageNum] = useState(1);
   const [pageCount, setPageCount] = useState(0);
-  const [isRendering, setIsRendering] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   
   const canvasRef = useRef(null);
@@ -162,46 +161,75 @@ const Visionneuse = () => {
     fetchInitialData();
   }, [fetchInitialData]);
 
+  // Ref for rendering flag to avoid infinite loops in useCallback
+  const isRenderingRef = useRef(false);
+  const [renderingState, setRenderingState] = useState(false); // Only for UI spinner
+
   // PDF.js Rendering Logic for Mobile
   const renderPage = useCallback(async (num, doc) => {
-    if (!doc || !canvasRef.current || isRendering) return;
-    setIsRendering(true);
+    if (!doc || !canvasRef.current || isRenderingRef.current) return;
+    
+    isRenderingRef.current = true;
+    setRenderingState(true);
     try {
-      if (renderTaskRef.current) renderTaskRef.current.cancel();
+      if (renderTaskRef.current) {
+        renderTaskRef.current.cancel();
+      }
+
       const page = await doc.getPage(num);
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
+      
       const viewport = page.getViewport({ scale: 2 });
       const wrapperWidth = canvas.parentElement.clientWidth - 20;
       const displayScale = wrapperWidth / viewport.width;
       const finalViewport = page.getViewport({ scale: displayScale * 2 });
+
       canvas.height = finalViewport.height;
       canvas.width = finalViewport.width;
       canvas.style.width = `${wrapperWidth}px`;
-      const renderTask = page.render({ canvasContext: ctx, viewport: finalViewport });
+      canvas.style.height = 'auto';
+
+      const renderContext = {
+        canvasContext: ctx,
+        viewport: finalViewport
+      };
+      
+      const renderTask = page.render(renderContext);
       renderTaskRef.current = renderTask;
+      
       await renderTask.promise;
-      setIsRendering(false);
     } catch (err) {
-      if (err.name !== 'RenderingCancelledException') console.error("PDF Render Error:", err);
-      setIsRendering(false);
+      if (err.name !== 'RenderingCancelledException') {
+        console.error("PDF Render Error:", err);
+      }
+    } finally {
+      isRenderingRef.current = false;
+      setRenderingState(false);
     }
-  }, [isRendering]);
+  }, []);
 
   useEffect(() => {
+    let active = true;
     if (selectedFile && isMobile && selectedFile.path?.toLowerCase().endsWith('.pdf')) {
       const loadPDF = async () => {
         try {
           const loadingTask = window.pdfjsLib.getDocument(selectedFile.path);
           const doc = await loadingTask.promise;
+          if (!active) return;
           setPdfDoc(doc);
           setPageCount(doc.numPages);
           setPageNum(1);
           renderPage(1, doc);
-        } catch (err) { console.error("PDF.js Load Error:", err); }
+        } catch (err) { 
+          if (active) console.error("PDF.js Load Error:", err); 
+        }
       };
       loadPDF();
-    } else { setPdfDoc(null); }
+    } else { 
+      setPdfDoc(null); 
+    }
+    return () => { active = false; };
   }, [selectedFile, isMobile, renderPage]);
 
   const handleSelectFile = (file) => {
@@ -299,7 +327,7 @@ const Visionneuse = () => {
                   <button onClick={() => { if(pageNum < pageCount) { const n = pageNum + 1; setPageNum(n); renderPage(n, pdfDoc); } }}>Suivant</button>
                 </div>
                 <div id="pdf-canvas-wrapper">
-                  {isRendering && <div className="spinner" style={{ margin: '20px auto' }}></div>}
+                  {renderingState && <div className="spinner" style={{ margin: '20px auto' }}></div>}
                   <canvas ref={canvasRef} id="pdf-canvas"></canvas>
                 </div>
               </div>

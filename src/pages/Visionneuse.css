@@ -1,0 +1,373 @@
+/* Ported from original style.css, scoped to .blender-viewer */
+.blender-viewer {
+    --bg-color: #0f0f13;
+    --sidebar-bg: rgba(25, 25, 35, 0.7);
+    --text-primary: #ffffff;
+    --text-secondary: #a0a0a0;
+    --accent-color: #ff7417; /* Blender Orange */
+    --accent-hover: #bc5206;
+    --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+    --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+    
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    height: calc(100vh - 80px); /* Subtract ClassPilot bottom nav height */
+    overflow: hidden;
+    display: flex;
+    font-family: 'Inter', sans-serif;
+    position: relative;
+    width: 100%;
+}
+
+/* Sidebar Styling */
+.blender-viewer .sidebar {
+    width: 300px;
+    height: 100%;
+    background: var(--sidebar-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-right: var(--glass-border);
+    padding: 2rem 0 0.5rem 0;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--glass-shadow);
+    z-index: 10;
+    flex-shrink: 0;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.blender-viewer .sidebar.closed {
+    margin-left: -300px;
+}
+
+.blender-viewer .brand {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+    padding: 0 2rem;
+    color: var(--text-primary);
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.blender-viewer .brand span {
+    color: var(--accent-color);
+}
+
+.blender-viewer .brand-subtitle {
+    padding: 0 2rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    font-weight: 400;
+    line-height: 1.4;
+}
+
+.blender-viewer .sidebar-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 2rem;
+}
+
+.blender-viewer .sidebar-footer {
+    padding: 1rem 2rem 0.5rem 2rem;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    opacity: 0.5;
+    text-align: left;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    margin-top: auto;
+    font-weight: 300;
+}
+
+.blender-viewer .menu-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 0.5rem;
+    margin-top: 1.5rem;
+}
+
+.blender-viewer .menu-label:first-child {
+    margin-top: 0;
+}
+
+.blender-viewer .course-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.blender-viewer .course-item {
+    margin-bottom: 0.25rem;
+}
+
+.blender-viewer .course-item-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding-right: 0.5rem;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.blender-viewer .course-item-container:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.blender-viewer .course-link {
+    flex: 1;
+    display: block;
+    padding: 0.6rem 0.5rem;
+    border-radius: 6px 0 0 6px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.blender-viewer .course-link:hover {
+    color: var(--text-primary);
+    padding-left: 0.75rem;
+}
+
+.blender-viewer .course-link.active {
+    background: rgba(255, 116, 23, 0.2);
+    color: var(--accent-color);
+    border-left: 3px solid var(--accent-color);
+    padding-left: 0.75rem;
+}
+
+.blender-viewer .folder-header {
+    display: flex;
+    align-items: center;
+    padding: 0.6rem 0.5rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-weight: 500;
+    transition: background 0.2s;
+    border-radius: 6px;
+    user-select: none;
+}
+
+.blender-viewer .folder-header:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.blender-viewer .folder-icon {
+    font-size: 0.7rem;
+    margin-right: 0.5rem;
+    transition: transform 0.3s ease;
+    width: 12px;
+    display: inline-block;
+}
+
+.blender-viewer .folder-header.open .folder-icon {
+    transform: rotate(90deg);
+    color: var(--accent-color);
+}
+
+.blender-viewer .submenu {
+    list-style: none;
+    padding-left: 1rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    margin-left: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+/* Viewer Styles */
+.blender-viewer .main-content {
+    flex: 1;
+    height: 100%;
+    position: relative;
+    background-image: radial-gradient(circle at top right, #1f1f2e 0%, #0f0f13 40%);
+    display: flex;
+    flex-direction: column;
+}
+
+.blender-viewer #pdf-container {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    background: #1a1a1a;
+}
+
+.blender-viewer iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.blender-viewer .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 2rem;
+}
+
+.blender-viewer .empty-state h2 {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+/* Sidebar Toggle Buttons */
+.blender-viewer .sidebar-toggle-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: color 0.2s;
+    line-height: 1;
+    z-index: 20;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.blender-viewer .sidebar-toggle-open {
+    position: fixed;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    background: var(--sidebar-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0 12px 12px 0;
+    padding: 1rem 0.5rem;
+    color: var(--accent-color);
+    font-size: 1rem;
+    cursor: pointer;
+    z-index: 900;
+    transition: left 0.3s ease, opacity 0.3s;
+    opacity: 0;
+    pointer-events: none;
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
+}
+
+.blender-viewer .sidebar-toggle-open.visible {
+    opacity: 1;
+    pointer-events: auto;
+    left: 0;
+    top: 20%; /* Same as original animation endpoint */
+}
+
+/* Mobile PDF.js Styles */
+.blender-viewer #mobile-pdf-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #1a1a1a;
+    height: 100%;
+    overflow: hidden;
+}
+
+.blender-viewer #mobile-viewer-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem;
+    background: rgba(25, 25, 35, 0.9);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 100;
+}
+
+.blender-viewer #mobile-viewer-controls button {
+    padding: 0.5rem 1rem;
+    background: var(--accent-color);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.blender-viewer .mobile-center-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.blender-viewer #fullscreen-btn {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    padding: 0.4rem 0.6rem !important;
+    font-size: 1.1rem !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    color: white;
+}
+
+.blender-viewer #page-info {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.blender-viewer #pdf-canvas-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    -webkit-overflow-scrolling: touch;
+}
+
+.blender-viewer #pdf-canvas {
+    max-width: 100%;
+    height: auto !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    background: white;
+    display: block;
+    margin: 0 auto;
+    touch-action: pan-y;
+}
+
+.blender-viewer .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top: 3px solid var(--accent-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+    .blender-viewer .sidebar {
+        width: 100vw;
+        border-right: none;
+        padding-top: 4rem;
+    }
+    .blender-viewer .sidebar.closed {
+        margin-left: -100vw;
+    }
+}

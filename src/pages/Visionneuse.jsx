@@ -1,16 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { 
-  Folder, 
-  FileText, 
-  ChevronRight, 
-  ChevronDown, 
-  Download, 
-  ExternalLink, 
-  MonitorPlay,
-  ArrowLeft,
-  Search,
-  BookOpen
-} from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import './Visionneuse.css';
 
 const DRIVE_CONFIG = {
   apiKey: 'AIzaSyBA2lV9mm9_tNIpErOd9yO5lMjlIYtlCwM',
@@ -22,8 +11,30 @@ const Visionneuse = () => {
   const [loading, setLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState(null);
   const [expandedFolders, setExpandedFolders] = useState({});
-  const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState('list'); // 'list' or 'viewer'
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  
+  // PDF.js State for Mobile
+  const [pdfDoc, setPdfDoc] = useState(null);
+  const [pageNum, setPageNum] = useState(1);
+  const [pageCount, setPageCount] = useState(0);
+  const [isRendering, setIsRendering] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  const canvasRef = useRef(null);
+  const renderTaskRef = useRef(null);
+
+  // Detect mobile
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (mobile) setSidebarOpen(false);
+      else setSidebarOpen(true);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const toggleFolder = (id) => {
     setExpandedFolders(prev => ({ ...prev, [id]: !prev[id] }));
@@ -120,176 +131,219 @@ const Visionneuse = () => {
     fetchGoogleDriveData();
   }, [fetchGoogleDriveData]);
 
-  const handleSelectFile = (file) => {
-    setSelectedFile(file);
-    if (window.innerWidth < 1024) {
-      setViewMode('viewer');
+  // PDF.js Rendering Logic for Mobile
+  const renderPage = useCallback(async (num, doc) => {
+    if (!doc || !canvasRef.current || isRendering) return;
+    
+    setIsRendering(true);
+    try {
+      if (renderTaskRef.current) {
+        renderTaskRef.current.cancel();
+      }
+
+      const page = await doc.getPage(num);
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      
+      const viewport = page.getViewport({ scale: 2 }); // Higher scale for clarity
+      const wrapperWidth = canvas.parentElement.clientWidth - 20;
+      const displayScale = wrapperWidth / viewport.width;
+      const finalViewport = page.getViewport({ scale: displayScale * 2 });
+
+      canvas.height = finalViewport.height;
+      canvas.width = finalViewport.width;
+      canvas.style.width = `${wrapperWidth}px`;
+      canvas.style.height = 'auto';
+
+      const renderContext = {
+        canvasContext: ctx,
+        viewport: finalViewport
+      };
+      
+      const renderTask = page.render(renderContext);
+      renderTaskRef.current = renderTask;
+      
+      await renderTask.promise;
+      setIsRendering(false);
+    } catch (err) {
+      if (err.name !== 'RenderingCancelledException') {
+        console.error("PDF Render Error:", err);
+      }
+      setIsRendering(false);
+    }
+  }, [isRendering]);
+
+  useEffect(() => {
+    if (selectedFile && isMobile && selectedFile.path.toLowerCase().endsWith('.pdf')) {
+      // Load PDF via PDF.js for mobile
+      const loadPDF = async () => {
+        try {
+          const loadingTask = window.pdfjsLib.getDocument(selectedFile.path);
+          const doc = await loadingTask.promise;
+          setPdfDoc(doc);
+          setPageCount(doc.numPages);
+          setPageNum(1);
+          renderPage(1, doc);
+        } catch (err) {
+          console.error("PDF.js Load Error:", err);
+        }
+      };
+      loadPDF();
+    } else {
+      setPdfDoc(null);
+    }
+  }, [selectedFile, isMobile, renderPage]);
+
+  const handleNextPage = () => {
+    if (pageNum < pageCount) {
+      const next = pageNum + 1;
+      setPageNum(next);
+      renderPage(next, pdfDoc);
     }
   };
 
-  const renderTree = (items, depth = 0) => {
-    if (!items) return null;
-
-    return items
-      .filter(item => 
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        (item.type === 'folder' && item.children.some(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())))
-      )
-      .map((item) => {
-        const isExpanded = expandedFolders[item.id];
-        const isFile = item.type === 'file';
-
-        return (
-          <div key={item.id || item.name} className="tree-item">
-            <div 
-              className={`flex items-center gap-2 p-3 rounded-xl cursor-pointer transition-all hover:bg-primary/5 active:scale-[0.98] ${selectedFile?.id === item.id ? 'bg-primary/10 border-l-4 border-primary' : ''}`}
-              style={{ paddingLeft: `${depth * 16 + 12}px` }}
-              onClick={() => isFile ? handleSelectFile(item) : toggleFolder(item.id)}
-            >
-              {!isFile ? (
-                isExpanded ? <ChevronDown size={16} className="text-slate-400" /> : <ChevronRight size={16} className="text-slate-400" />
-              ) : (
-                <div className="w-4" /> 
-              )}
-              
-              {isFile ? (
-                <FileText size={18} className="text-primary" />
-              ) : (
-                <Folder size={18} className="text-accent fill-accent/10" />
-              )}
-              
-              <span className={`text-sm ${isFile ? 'font-medium text-slate-700 dark:text-slate-200' : 'font-bold text-slate-800 dark:text-slate-100'}`}>
-                {item.name.replace('.pdf', '')}
-              </span>
-            </div>
-            
-            {!isFile && isExpanded && (
-              <div className="folder-children">
-                {renderTree(item.children, depth + 1)}
-              </div>
-            )}
-          </div>
-        );
-      });
+  const handlePrevPage = () => {
+    if (pageNum > 1) {
+      const prev = pageNum - 1;
+      setPageNum(prev);
+      renderPage(prev, pdfDoc);
+    }
   };
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-80px)] bg-bg-color gap-4">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-        <p className="font-bold text-slate-500 animate-pulse">Chargement de la bibliothèque 3D...</p>
-      </div>
-    );
-  }
+  const handleSelectFile = (file) => {
+    setSelectedFile(file);
+    if (isMobile) setSidebarOpen(false);
+  };
+
+  const renderTree = (items) => {
+    if (!items) return null;
+
+    return items.map((item) => {
+      const isExpanded = expandedFolders[item.id];
+      const isFile = item.type === 'file';
+      const isActive = selectedFile?.id === item.id;
+
+      if (isFile) {
+        return (
+          <li key={item.id} className="course-item">
+            <div className="course-item-container">
+              <a 
+                href="#" 
+                className={`course-link ${isActive ? 'active' : ''}`}
+                onClick={(e) => { e.preventDefault(); handleSelectFile(item); }}
+              >
+                {item.name.replace('.pdf', '')}
+              </a>
+            </div>
+          </li>
+        );
+      } else {
+        return (
+          <li key={item.id} className="course-item">
+            <div className={`folder-header ${isExpanded ? 'open' : ''}`} onClick={() => toggleFolder(item.id)}>
+              <span className="folder-icon">▶</span>
+              <span className="folder-name">{item.name}</span>
+            </div>
+            {isExpanded && (
+              <ul className="submenu">
+                {renderTree(item.children)}
+              </ul>
+            )}
+          </li>
+        );
+      }
+    });
+  };
 
   const years = Object.keys(data.courses).sort((a, b) => b - a);
-  const treeData = years.map(year => ({
+  const courseTree = years.map(year => ({
     type: 'folder',
     id: year,
     name: `Année ${year}-${parseInt(year) + 1}`,
     children: data.courses[year]
   }));
 
+  if (loading) {
+    return (
+      <div className="blender-viewer" style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: '20px' }}>
+        <div className="spinner"></div>
+        <p style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Cahrgement du cours Blender...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className={`flex flex-col lg:flex-row h-[calc(100vh-80px)] bg-bg-color overflow-hidden`}>
-      <aside className={`w-full lg:w-80 border-r border-slate-200 dark:border-slate-800 flex flex-col bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl ${viewMode === 'viewer' ? 'hidden' : 'flex'}`}>
-        <div className="p-6">
-          <header className="mb-6">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="p-2 bg-gradient-to-br from-primary to-accent rounded-xl text-white shadow-lg shadow-primary/20">
-                <MonitorPlay size={20} />
-              </div>
-              <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">Blender</h1>
-            </div>
-            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Bibliothèque de cours</p>
-          </header>
+    <div className="blender-viewer">
+      {/* Sidebar Toggle Open (Mobile) */}
+      <button 
+        className={`sidebar-toggle-open ${!sidebarOpen ? 'visible' : ''}`}
+        onClick={() => setSidebarOpen(true)}
+      >
+        ▶
+      </button>
 
-          <div className="relative mb-6">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input 
-              type="text" 
-              placeholder="Rechercher un cours..." 
-              className="form-input !pl-10 !py-2.5 !text-sm"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+      <nav className={`sidebar ${!sidebarOpen ? 'closed' : ''}`}>
+        <button className="sidebar-toggle-close" onClick={() => setSidebarOpen(false)}>×</button>
+        <div className="brand">
+          <span>3D</span> Blender
+        </div>
+        <div className="brand-subtitle">
+          Cours créé par Olivier Sudermann<br/>
+          <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>Mode Professeur - Accès Total</span>
+        </div>
+
+        <div className="sidebar-scroll">
+          <div className="menu-label">Liste des cours</div>
+          <ul className="course-list">
+            {renderTree(courseTree)}
+          </ul>
+
+          <div className="menu-label" style={{ marginTop: '2rem' }}>3D Tips</div>
+          <ul className="course-list">
+            {renderTree(data.tips)}
+          </ul>
+        </div>
+
+        <div className="sidebar-footer">
+          <a href="https://oliviersudermann.wixsite.com/olivier-sudermann" target="_blank" rel="noopener noreferrer">
+            Cours réalisé par Olivier Sudermann
+          </a>
+        </div>
+      </nav>
+
+      <main className="main-content">
+        {!selectedFile ? (
+          <div className="empty-state">
+            <h2>Bienvenue au cours de Blender</h2>
+            <p>Sélectionnez le cours dans le menu de gauche pour commencer.</p>
           </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-2 pb-10 custom-scrollbar">
-          <div className="px-4 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400">Cours</div>
-          {renderTree(treeData)}
-
-          <div className="mt-8 px-4 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400">Astuces 3D</div>
-          {renderTree(data.tips)}
-        </div>
-      </aside>
-
-      <main className={`flex-1 flex flex-col relative bg-slate-100 dark:bg-[#0b1121] ${viewMode === 'list' && window.innerWidth < 1024 ? 'hidden' : 'flex'}`}>
-        {selectedFile ? (
+        ) : (
           <>
-            <div className="p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 z-10 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={() => setViewMode('list')}
-                  className="lg:hidden p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500"
-                >
-                  <ArrowLeft size={20} />
-                </button>
-                <div>
-                  <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100 line-clamp-1">{selectedFile.name.replace('.pdf', '')}</h2>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">O.S. Blender Course</p>
+            {/* Hybrid Viewer */}
+            {isMobile && selectedFile.path.toLowerCase().endsWith('.pdf') ? (
+              <div id="mobile-pdf-container">
+                <div id="mobile-viewer-controls">
+                  <button onClick={handlePrevPage}>Précédent</button>
+                  <div className="mobile-center-controls">
+                    <button id="fullscreen-btn" onClick={() => canvasRef.current?.requestFullscreen()}>⛶</button>
+                    <span id="page-info">Page {pageNum} / {pageCount}</span>
+                  </div>
+                  <button onClick={handleNextPage}>Suivant</button>
+                </div>
+                <div id="pdf-canvas-wrapper">
+                  {isRendering && <div className="spinner" style={{ margin: '20px auto' }}></div>}
+                  <canvas ref={canvasRef} id="pdf-canvas"></canvas>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                {selectedFile.downloadUrl && (
-                  <a 
-                    href={selectedFile.downloadUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                    title="Télécharger"
-                  >
-                    <Download size={20} />
-                  </a>
-                )}
-                <a 
-                  href={selectedFile.path} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                  title="Ouvrir dans un nouvel onglet"
-                >
-                  <ExternalLink size={20} />
-                </a>
+            ) : (
+              <div id="pdf-container">
+                <iframe 
+                  src={selectedFile.path} 
+                  title="Viewer Mixer"
+                />
               </div>
-            </div>
-
-            <div className="flex-1 w-full bg-[#323639] overflow-hidden relative">
-              <iframe 
-                src={selectedFile.path} 
-                className="w-full h-full border-none shadow-2xl"
-                title="Viewer Blender"
-              />
-            </div>
+            )}
           </>
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center p-10 text-center">
-            <div className="w-20 h-20 bg-white dark:bg-slate-900 rounded-[32px] shadow-2xl flex items-center justify-center mb-6 border border-slate-100 dark:border-slate-800">
-              <BookOpen size={36} className="text-primary" />
-            </div>
-            <h2 className="text-xl font-black text-slate-800 dark:text-white mb-2 tracking-tight">Veuillez sélectionner un cours</h2>
-            <p className="text-sm text-slate-400 max-w-xs font-medium">Choisissez un chapitre dans la liste à gauche pour commencer votre apprentissage sur Blender.</p>
-            
-            <div className="mt-12 lg:hidden">
-              <button 
-                onClick={() => setViewMode('list')}
-                className="px-8 py-3 bg-primary text-white font-bold rounded-2xl shadow-lg shadow-primary/30 active:scale-95 transition-all"
-              >
-                Ouvrir la liste
-              </button>
-            </div>
-          </div>
         )}
       </main>
     </div>

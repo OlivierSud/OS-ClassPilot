@@ -21,15 +21,10 @@ const Layout = () => {
           <Users />
           <span>Classes</span>
         </NavLink>
-        <a 
-          href="https://oliviersud.github.io/OS-blender-course/" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="nav-item"
-        >
+        <NavLink to="/blender" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <MonitorPlay />
           <span>Blender</span>
-        </a>
+        </NavLink>
         <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <Settings />
           <span>Réglages</span>

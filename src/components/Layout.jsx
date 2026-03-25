@@ -1,4 +1,4 @@
-import { Home, Calendar, Users, Settings } from 'lucide-react';
+import { Home, Calendar, Users, Settings, MonitorPlay } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 
 const Layout = () => {
@@ -21,6 +21,15 @@ const Layout = () => {
           <Users />
           <span>Classes</span>
         </NavLink>
+        <a 
+          href="https://oliviersud.github.io/OS-blender-course/" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="nav-item"
+        >
+          <MonitorPlay />
+          <span>Blender</span>
+        </a>
         <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <Settings />
           <span>Réglages</span>

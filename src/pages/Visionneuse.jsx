@@ -6,28 +6,14 @@ const DRIVE_CONFIG = {
   folderId: '1hXzaOpzsBJSwESAugAwutJc7oaR8Ou17'
 };
 
-const CLASS_PASSWORDS = {
-  '3D1': 'aqwse',
-  '3D2': 'zsxdr',
-  'DA3': 'edcft',
-  'Prof': 'prof01',
-};
-
 const Visionneuse = () => {
   const [data, setData] = useState({ courses: [], tips: [] });
   const [loading, setLoading] = useState(true);
-  const [userClass, setUserClass] = useState(() => sessionStorage.getItem('selectedGroup'));
   const [selectedFile, setSelectedFile] = useState(null);
   const [expandedFolders, setExpandedFolders] = useState({});
   const [loadingFolders, setLoadingFolders] = useState({});
   const [sidebarOpen, setSidebarOpen] = useState(true);
   
-  // Login State
-  const [loginState, setLoginState] = useState('selection');
-  const [pendingClass, setPendingClass] = useState(null);
-  const [passwordInput, setPasswordInput] = useState('');
-  const [loginError, setLoginError] = useState('');
-
   // Mobile PDF.js State
   const [pdfDoc, setPdfDoc] = useState(null);
   const [pageNum, setPageNum] = useState(1);
@@ -44,12 +30,12 @@ const Visionneuse = () => {
       const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
       setIsMobile(mobile);
       if (mobile) setSidebarOpen(false);
-      else if (userClass) setSidebarOpen(true);
+      else setSidebarOpen(true);
     };
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [userClass]);
+  }, []);
 
   // Helper: Fetch folder contents (Non-recursive)
   const getFolderContents = useCallback(async (folderId) => {
@@ -130,15 +116,12 @@ const Visionneuse = () => {
       });
 
       if (mainContainerFolder) {
-        // Fetch years
         initialCourses = await getFolderContents(mainContainerFolder.id);
       } else {
-        // Fallback: If root contains year folders directly
         const yearFolders = rootContents.filter(item => item.type === 'folder' && /^\d{4}$/.test(item.name));
         if (yearFolders.length > 0) {
           initialCourses = yearFolders;
         } else {
-          // Fallback 2: Root is the container
           initialCourses = rootContents;
         }
       }
@@ -161,6 +144,13 @@ const Visionneuse = () => {
 
       setData({ courses: initialCourses, tips });
       setLoading(false);
+      
+      // Auto-expand the newest year (optional)
+      if (initialCourses.length > 0) {
+        const newest = initialCourses.sort((a,b) => b.name.localeCompare(a.name))[0];
+        // We'll expand it in the next frame to avoid issues
+        setTimeout(() => toggleFolder(newest), 100);
+      }
     } catch (err) {
       console.error("Initial fetch error:", err);
       setLoading(false);
@@ -171,7 +161,7 @@ const Visionneuse = () => {
     fetchInitialData();
   }, [fetchInitialData]);
 
-  // PDF.js Logic (as before)
+  // PDF.js Rendering Logic for Mobile
   const renderPage = useCallback(async (num, doc) => {
     if (!doc || !canvasRef.current || isRendering) return;
     setIsRendering(true);
@@ -213,46 +203,9 @@ const Visionneuse = () => {
     } else { setPdfDoc(null); }
   }, [selectedFile, isMobile, renderPage]);
 
-  const handleLogin = () => {
-    if (CLASS_PASSWORDS[pendingClass] === passwordInput) {
-      setUserClass(pendingClass);
-      sessionStorage.setItem('selectedGroup', pendingClass);
-      setLoginState('selection');
-      setPendingClass(null);
-      setPasswordInput('');
-      setLoginError('');
-    } else { setLoginError('Mot de passe incorrect'); }
-  };
-
   const handleSelectFile = (file) => {
     setSelectedFile(file);
     if (isMobile) setSidebarOpen(false);
-  };
-
-  const handleSwitchClass = () => {
-    setUserClass(null);
-    sessionStorage.removeItem('selectedGroup');
-    setSelectedFile(null);
-  };
-
-  // Logic to filter top-level folders based on userClass
-  const getVisibleRoots = () => {
-    if (!userClass) return [];
-    if (userClass === 'Prof') return data.courses;
-
-    // Student mode: Usually the last folder in the list is the most recent year
-    const sorted = [...data.courses].sort((a, b) => b.name.localeCompare(a.name));
-    if (sorted.length === 0) return [];
-    
-    // If we have years, find the user class inside the latest year
-    // Since we are lazy loading, we might not have children yet.
-    // However, the original app showed the class folder at the root for students.
-    // Let's adapt: if the root contains year folders, the student sees their class folder from the latest year.
-    // But wait! If they login as "3D1", they want to see "3D1" courses.
-    // Let's simplify: Students see the whole tree but maybe filtered? 
-    // Actually, the user asked for "Mode Professeur pour acces total".
-    // For students, let's show the same tree but maybe keep it simple.
-    return data.courses; 
   };
 
   const renderTree = (items) => {
@@ -304,46 +257,7 @@ const Visionneuse = () => {
     return (
       <div className="blender-viewer" style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: '20px' }}>
         <div className="spinner"></div>
-        <p style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Initialisation...</p>
-      </div>
-    );
-  }
-
-  if (!userClass) {
-    return (
-      <div className="blender-viewer" style={{ justifyContent: 'center', alignItems: 'center' }}>
-        <div className="login-overlay" style={{ display: 'flex', position: 'relative' }}>
-          <div className="login-box">
-            {loginState === 'selection' ? (
-              <>
-                <h2>Sélectionnez votre classe</h2>
-                <div id="class-selection" style={{ display: 'grid' }}>
-                  {['3D1', '3D2', 'DA3'].map(c => (
-                    <button key={c} className="class-button" onClick={() => { setPendingClass(c); setLoginState('password'); }}>{c}</button>
-                  ))}
-                  <button className="class-button prof-button" onClick={() => { setPendingClass('Prof'); setLoginState('password'); }}>Professeur</button>
-                </div>
-              </>
-            ) : (
-              <div id="password-section">
-                <h2>{pendingClass}</h2>
-                <input 
-                  type="password" 
-                  className="form-input"
-                  style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', marginBottom: '1rem', padding: '1rem' }}
-                  placeholder="Mot de passe"
-                  value={passwordInput}
-                  onChange={(e) => setPasswordInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-                  autoFocus
-                />
-                <button className="class-button" style={{ width: '100%' }} onClick={handleLogin}>Entrer</button>
-                <button className="secondary-button" onClick={() => { setLoginState('selection'); setLoginError(''); }}>Retour</button>
-                {loginError && <p className="error-msg">{loginError}</p>}
-              </div>
-            )}
-          </div>
-        </div>
+        <p style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Ouverture de la bibliothèque Blender...</p>
       </div>
     );
   }
@@ -354,11 +268,10 @@ const Visionneuse = () => {
       <nav className={`sidebar ${!sidebarOpen ? 'closed' : ''}`}>
         <button className="sidebar-toggle-close" onClick={() => setSidebarOpen(false)}>×</button>
         <div className="brand"><span>3D</span> Blender</div>
-        <div className="brand-subtitle">Cours créé par Olivier Sudermann<br/><span style={{ fontSize: '0.7rem', opacity: 0.7 }}>{userClass === 'Prof' ? 'Accès Total' : `Cours ${userClass}`}</span></div>
-        <button className="switch-class-button" onClick={handleSwitchClass}>Changer de classe</button>
+        <div className="brand-subtitle">Cours créé par Olivier Sudermann<br/><span style={{ fontSize: '0.7rem', opacity: 0.7 }}>Accès Total (Professeur)</span></div>
         <div className="sidebar-scroll">
           <div className="menu-label">Liste des cours</div>
-          <ul className="course-list">{renderTree(getVisibleRoots())}</ul>
+          <ul className="course-list">{renderTree(data.courses)}</ul>
           <div className="menu-label" style={{ marginTop: '2rem' }}>3D Tips</div>
           <ul className="course-list">{renderTree(data.tips)}</ul>
         </div>

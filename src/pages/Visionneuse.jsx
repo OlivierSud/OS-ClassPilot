@@ -127,18 +127,19 @@ const Visionneuse = () => {
       }
 
       // Local Tips
+      const baseUrl = import.meta.env.BASE_URL || '/';
       const tips = [
         {
           type: 'file',
           id: 'tip-1',
           name: 'Interface et base de modélisation',
-          path: '/visionneuse/Tips/Interface et base de modélisation.pdf'
+          path: `${baseUrl}visionneuse/Tips/Interface et base de modélisation.pdf`
         },
         {
           type: 'file',
           id: 'tip-2',
           name: 'Raccourcis clavier',
-          path: '/visionneuse/Tips/Raccourcis clavier/index.html'
+          path: `${baseUrl}visionneuse/Tips/Raccourcis clavier/index.html`
         }
       ];
 

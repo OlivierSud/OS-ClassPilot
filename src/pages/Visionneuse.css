@@ -371,3 +371,68 @@
         margin-left: -100vw;
     }
 }
+
+/* ─── Viewer Toolbar ──────────────────────────────────── */
+.blender-viewer .viewer-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1rem;
+    background: rgba(25, 25, 35, 0.95);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+    gap: 1rem;
+    z-index: 10;
+}
+
+.blender-viewer .viewer-filename {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 60%;
+}
+
+.blender-viewer .viewer-toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.blender-viewer .view-mode-toggle {
+    display: flex;
+    background: rgba(0,0,0,0.3);
+    border-radius: 6px;
+    padding: 3px;
+    gap: 2px;
+}
+
+.blender-viewer .vt-btn {
+    padding: 0.35rem 0.7rem;
+    font-size: 1rem;
+    border-radius: 5px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.blender-viewer .vt-btn:hover {
+    background: rgba(255,255,255,0.1);
+    color: var(--text-primary);
+}
+
+.blender-viewer .vt-btn.active {
+    background: var(--accent-color);
+    color: white;
+    box-shadow: 0 2px 8px rgba(255, 116, 23, 0.4);
+}
+

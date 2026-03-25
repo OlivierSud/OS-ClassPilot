@@ -14,14 +14,17 @@ const Visionneuse = () => {
   const [loadingFolders, setLoadingFolders] = useState({});
   const [sidebarOpen, setSidebarOpen] = useState(true);
   
-  // Mobile PDF.js State
+  // PDF.js State
   const [pdfDoc, setPdfDoc] = useState(null);
   const [pageNum, setPageNum] = useState(1);
   const [pageCount, setPageCount] = useState(0);
+  const [viewMode, setViewMode] = useState('page'); // 'page' | 'scroll'
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   
   const canvasRef = useRef(null);
   const renderTaskRef = useRef(null);
+  const mainContentRef = useRef(null);
 
   // Detect mobile
   useEffect(() => {
@@ -209,28 +212,57 @@ const Visionneuse = () => {
     }
   }, []);
 
+  // Load PDF when file or mode changes
   useEffect(() => {
     let active = true;
-    if (selectedFile && isMobile && selectedFile.path?.toLowerCase().endsWith('.pdf')) {
+    const isPDF = selectedFile?.path?.toLowerCase().includes('.pdf') || selectedFile?.path?.includes('/preview');
+    if (selectedFile && viewMode === 'page' && isPDF) {
       const loadPDF = async () => {
         try {
-          const loadingTask = window.pdfjsLib.getDocument(selectedFile.path);
+          // For Google Drive preview URLs, extract direct media URL
+          let pdfUrl = selectedFile.path;
+          if (pdfUrl.includes('drive.google.com') && pdfUrl.includes('/preview')) {
+            const fileId = pdfUrl.split('/d/')[1].split('/')[0];
+            pdfUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${DRIVE_CONFIG.apiKey}`;
+          }
+          const loadingTask = window.pdfjsLib.getDocument(pdfUrl);
           const doc = await loadingTask.promise;
           if (!active) return;
           setPdfDoc(doc);
           setPageCount(doc.numPages);
           setPageNum(1);
-          renderPage(1, doc);
-        } catch (err) { 
-          if (active) console.error("PDF.js Load Error:", err); 
+          // Small delay so the canvas is mounted
+          setTimeout(() => renderPage(1, doc), 50);
+        } catch (err) {
+          if (active) console.error("PDF.js Load Error:", err);
         }
       };
       loadPDF();
-    } else { 
-      setPdfDoc(null); 
+    } else {
+      setPdfDoc(null);
     }
     return () => { active = false; };
-  }, [selectedFile, isMobile, renderPage]);
+  }, [selectedFile, viewMode, renderPage]);
+
+  // Reset page on file change
+  useEffect(() => {
+    setPageNum(1);
+  }, [selectedFile]);
+
+  // Fullscreen API
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      mainContentRef.current?.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  };
 
   const handleSelectFile = (file) => {
     setSelectedFile(file);
@@ -308,7 +340,7 @@ const Visionneuse = () => {
           <a href="https://oliviersudermann.wixsite.com/olivier-sudermann" target="_blank" rel="noopener noreferrer">Cours réalisé par Olivier Sudermann</a>
         </div>
       </nav>
-      <main className="main-content">
+      <main className="main-content" ref={mainContentRef}>
         {!selectedFile ? (
           <div className="empty-state">
             <h2>Bienvenue au cours de Blender</h2>
@@ -316,15 +348,51 @@ const Visionneuse = () => {
           </div>
         ) : (
           <>
-            {isMobile && selectedFile.path?.toLowerCase().endsWith('.pdf') ? (
-              <div id="mobile-pdf-container">
+            {/* ─── Toolbar ─────────────────────────────────────── */}
+            <div className="viewer-toolbar">
+              <span className="viewer-filename">{selectedFile.name.replace('.pdf', '')}</span>
+              <div className="viewer-toolbar-actions">
+                {/* View Mode Toggle */}
+                <div className="view-mode-toggle">
+                  <button
+                    className={`vt-btn ${viewMode === 'page' ? 'active' : ''}`}
+                    onClick={() => setViewMode('page')}
+                    title="Page par page"
+                  >
+                    □
+                  </button>
+                  <button
+                    className={`vt-btn ${viewMode === 'scroll' ? 'active' : ''}`}
+                    onClick={() => setViewMode('scroll')}
+                    title="Défilement continu"
+                  >
+                    ☰
+                  </button>
+                </div>
+                {/* Fullscreen (page mode only) */}
+                {viewMode === 'page' && (
+                  <button className="vt-btn" onClick={toggleFullscreen} title={isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}>
+                    {isFullscreen ? '❐' : '⛶'}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* ─── Viewer ──────────────────────────────────────── */}
+            {viewMode === 'page' ? (
+              <div id="mobile-pdf-container" style={{ display: 'flex' }}>
                 <div id="mobile-viewer-controls">
-                  <button onClick={() => { if(pageNum > 1) { const n = pageNum - 1; setPageNum(n); renderPage(n, pdfDoc); } }}>Précédent</button>
+                  <button
+                    onClick={() => { if (pageNum > 1) { const n = pageNum - 1; setPageNum(n); renderPage(n, pdfDoc); } }}
+                    disabled={pageNum <= 1}
+                  >Précédent</button>
                   <div className="mobile-center-controls">
-                    <button id="fullscreen-btn" onClick={() => canvasRef.current?.requestFullscreen()}>⛶</button>
                     <span id="page-info">Page {pageNum} / {pageCount}</span>
                   </div>
-                  <button onClick={() => { if(pageNum < pageCount) { const n = pageNum + 1; setPageNum(n); renderPage(n, pdfDoc); } }}>Suivant</button>
+                  <button
+                    onClick={() => { if (pageNum < pageCount) { const n = pageNum + 1; setPageNum(n); renderPage(n, pdfDoc); } }}
+                    disabled={pageNum >= pageCount}
+                  >Suivant</button>
                 </div>
                 <div id="pdf-canvas-wrapper">
                   {renderingState && <div className="spinner" style={{ margin: '20px auto' }}></div>}

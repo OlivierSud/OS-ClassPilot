@@ -328,13 +328,14 @@
 
 .blender-viewer #pdf-canvas-wrapper {
     flex: 1;
-    overflow-y: auto;
+    overflow: hidden;       /* Clip zoomed canvas nicely */
     overflow-x: hidden;
     padding: 10px 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     position: relative;
+    touch-action: none;     /* Let our JS handle all touch gestures */
     -webkit-overflow-scrolling: touch;
 }
 
@@ -345,7 +346,9 @@
     background: white;
     display: block;
     margin: 0 auto;
-    touch-action: pan-y;
+    touch-action: none;     /* Required for pinch-to-zoom to work */
+    will-change: transform; /* GPU acceleration */
+    transition: transform 0.05s linear;
 }
 
 .blender-viewer .spinner {

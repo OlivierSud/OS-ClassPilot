@@ -23,8 +23,14 @@ const Visionneuse = () => {
   const [isMobile, setIsMobile] = useState(false);
   
   const canvasRef = useRef(null);
+  const canvasWrapperRef = useRef(null);
   const renderTaskRef = useRef(null);
   const mainContentRef = useRef(null);
+
+  // Pinch-to-zoom state (refs for 60fps, no re-renders during gesture)
+  const zoomRef = useRef({ scale: 1, translateX: 0, translateY: 0 });
+  const lastTouchRef = useRef(null);
+  const lastTapRef = useRef(0);
 
   // Detect mobile
   useEffect(() => {
@@ -264,6 +270,115 @@ const Visionneuse = () => {
     }
   };
 
+  // ── Pinch-to-zoom & pan on canvas wrapper ──────────────────────────────
+  useEffect(() => {
+    const wrapper = canvasWrapperRef.current;
+    if (!wrapper) return;
+
+    const getDistance = (t1, t2) =>
+      Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+
+    const getMidpoint = (t1, t2) => ({
+      x: (t1.clientX + t2.clientX) / 2,
+      y: (t1.clientY + t2.clientY) / 2,
+    });
+
+    const applyTransform = () => {
+      const { scale, translateX, translateY } = zoomRef.current;
+      if (canvasRef.current) {
+        canvasRef.current.style.transform =
+          `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+        canvasRef.current.style.transformOrigin = 'center top';
+      }
+    };
+
+    const resetZoom = () => {
+      zoomRef.current = { scale: 1, translateX: 0, translateY: 0 };
+      applyTransform();
+    };
+
+    let initialDist = null;
+    let initialScale = 1;
+    let initialMid = null;
+    let initialTranslate = { x: 0, y: 0 };
+    let isPinching = false;
+    let panStart = null;
+    let panTranslate = { x: 0, y: 0 };
+
+    const onTouchStart = (e) => {
+      if (e.touches.length === 2) {
+        isPinching = true;
+        panStart = null;
+        initialDist = getDistance(e.touches[0], e.touches[1]);
+        initialMid = getMidpoint(e.touches[0], e.touches[1]);
+        initialScale = zoomRef.current.scale;
+        initialTranslate = { x: zoomRef.current.translateX, y: zoomRef.current.translateY };
+      } else if (e.touches.length === 1 && !isPinching) {
+        const now = Date.now();
+        if (now - lastTapRef.current < 280) {
+          resetZoom();
+          lastTapRef.current = 0;
+          return;
+        }
+        lastTapRef.current = now;
+        panStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        panTranslate = { x: zoomRef.current.translateX, y: zoomRef.current.translateY };
+      }
+    };
+
+    const onTouchMove = (e) => {
+      if (e.touches.length === 2 && initialDist !== null) {
+        e.preventDefault();
+        const newDist = getDistance(e.touches[0], e.touches[1]);
+        const newScale = Math.min(5, Math.max(0.5, initialScale * (newDist / initialDist)));
+        const newMid = getMidpoint(e.touches[0], e.touches[1]);
+        const dx = newMid.x - initialMid.x;
+        const dy = newMid.y - initialMid.y;
+        zoomRef.current = {
+          scale: newScale,
+          translateX: initialTranslate.x + dx,
+          translateY: initialTranslate.y + dy,
+        };
+        applyTransform();
+      } else if (e.touches.length === 1 && panStart && zoomRef.current.scale > 1) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - panStart.x;
+        const dy = e.touches[0].clientY - panStart.y;
+        zoomRef.current = {
+          ...zoomRef.current,
+          translateX: panTranslate.x + dx,
+          translateY: panTranslate.y + dy,
+        };
+        applyTransform();
+      }
+    };
+
+    const onTouchEnd = (e) => {
+      if (e.touches.length < 2) {
+        isPinching = false;
+        initialDist = null;
+        if (zoomRef.current.scale < 1) resetZoom();
+      }
+      if (e.touches.length === 0) panStart = null;
+    };
+
+    wrapper.addEventListener('touchstart', onTouchStart, { passive: true });
+    wrapper.addEventListener('touchmove', onTouchMove, { passive: false });
+    wrapper.addEventListener('touchend', onTouchEnd, { passive: true });
+
+    return () => {
+      wrapper.removeEventListener('touchstart', onTouchStart);
+      wrapper.removeEventListener('touchmove', onTouchMove);
+      wrapper.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [viewMode, selectedFile]);
+
+  // Reset zoom when file or mode changes
+  useEffect(() => {
+    zoomRef.current = { scale: 1, translateX: 0, translateY: 0 };
+    if (canvasRef.current) canvasRef.current.style.transform = '';
+  }, [selectedFile, viewMode]);
+
   const handleSelectFile = (file) => {
     setSelectedFile(file);
     if (isMobile) setSidebarOpen(false);
@@ -394,7 +509,7 @@ const Visionneuse = () => {
                     disabled={pageNum >= pageCount}
                   >Suivant</button>
                 </div>
-                <div id="pdf-canvas-wrapper">
+                <div id="pdf-canvas-wrapper" ref={canvasWrapperRef}>
                   {renderingState && <div className="spinner" style={{ margin: '20px auto' }}></div>}
                   <canvas ref={canvasRef} id="pdf-canvas"></canvas>
                 </div>

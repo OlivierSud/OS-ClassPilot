@@ -6,13 +6,27 @@ const DRIVE_CONFIG = {
   folderId: '1hXzaOpzsBJSwESAugAwutJc7oaR8Ou17'
 };
 
+const CLASS_PASSWORDS = {
+  '3D1': 'aqwse',
+  '3D2': 'zsxdr',
+  'DA3': 'edcft',
+  'Prof': 'prof01',
+};
+
 const Visionneuse = () => {
   const [data, setData] = useState({ courses: {}, tips: [] });
   const [loading, setLoading] = useState(true);
+  const [userClass, setUserClass] = useState(() => sessionStorage.getItem('blender_group'));
   const [selectedFile, setSelectedFile] = useState(null);
   const [expandedFolders, setExpandedFolders] = useState({});
   const [sidebarOpen, setSidebarOpen] = useState(true);
   
+  // Login State
+  const [loginState, setLoginState] = useState('selection'); // 'selection' or 'password'
+  const [pendingClass, setPendingClass] = useState(null);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [loginError, setLoginError] = useState('');
+
   // PDF.js State for Mobile
   const [pdfDoc, setPdfDoc] = useState(null);
   const [pageNum, setPageNum] = useState(1);
@@ -29,12 +43,12 @@ const Visionneuse = () => {
       const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
       setIsMobile(mobile);
       if (mobile) setSidebarOpen(false);
-      else setSidebarOpen(true);
+      else if (userClass) setSidebarOpen(true);
     };
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [userClass]);
 
   const toggleFolder = (id) => {
     setExpandedFolders(prev => ({ ...prev, [id]: !prev[id] }));
@@ -43,6 +57,7 @@ const Visionneuse = () => {
   const fetchGoogleDriveData = useCallback(async () => {
     try {
       const apiKey = DRIVE_CONFIG.apiKey;
+      const rootFolderId = DRIVE_CONFIG.folderId;
       
       const getFolderContents = async (folderId) => {
         const url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&fields=files(id,name,mimeType,webContentLink)&key=${apiKey}`;
@@ -86,13 +101,16 @@ const Visionneuse = () => {
         return children;
       };
 
-      const rootContents = await getFolderContents(DRIVE_CONFIG.folderId);
+      const rootContents = await getFolderContents(rootFolderId);
       const finalData = { courses: {}, tips: [] };
+      let mainFolderFound = false;
 
+      // Strategy 1: Look for 'Années' or 'Cours' folder
       for (const item of rootContents) {
         if (item.mimeType === 'application/vnd.google-apps.folder') {
           const nameLower = item.name.toLowerCase().trim();
           if (nameLower.includes('anné') || nameLower === 'cours') {
+            mainFolderFound = true;
             const years = await getFolderContents(item.id);
             for (const year of years) {
               if (year.mimeType === 'application/vnd.google-apps.folder') {
@@ -101,6 +119,21 @@ const Visionneuse = () => {
             }
           }
         }
+      }
+
+      // Fallback 1: Check root items if they are year folders (4 digits)
+      if (!mainFolderFound) {
+        for (const item of rootContents) {
+          if (item.mimeType === 'application/vnd.google-apps.folder' && /^\d{4}$/.test(item.name)) {
+            finalData.courses[item.name] = await buildTree(item.id, item.name);
+            mainFolderFound = true;
+          }
+        }
+      }
+
+      // Fallback 2: Default container
+      if (!mainFolderFound) {
+        finalData.courses["Défaut"] = await buildTree(rootFolderId, "Défaut");
       }
 
       // Local Tips
@@ -145,7 +178,7 @@ const Visionneuse = () => {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
       
-      const viewport = page.getViewport({ scale: 2 }); // Higher scale for clarity
+      const viewport = page.getViewport({ scale: 2 });
       const wrapperWidth = canvas.parentElement.clientWidth - 20;
       const displayScale = wrapperWidth / viewport.width;
       const finalViewport = page.getViewport({ scale: displayScale * 2 });
@@ -175,7 +208,6 @@ const Visionneuse = () => {
 
   useEffect(() => {
     if (selectedFile && isMobile && selectedFile.path.toLowerCase().endsWith('.pdf')) {
-      // Load PDF via PDF.js for mobile
       const loadPDF = async () => {
         try {
           const loadingTask = window.pdfjsLib.getDocument(selectedFile.path);
@@ -194,25 +226,56 @@ const Visionneuse = () => {
     }
   }, [selectedFile, isMobile, renderPage]);
 
-  const handleNextPage = () => {
-    if (pageNum < pageCount) {
-      const next = pageNum + 1;
-      setPageNum(next);
-      renderPage(next, pdfDoc);
+  // Logic to filter data based on userClass
+  const getFilteredTree = () => {
+    if (!userClass || !data.courses) return [];
+
+    const years = Object.keys(data.courses).sort((a, b) => b - a);
+    
+    if (userClass === 'Prof') {
+      return years.map(year => ({
+        type: 'folder',
+        id: year,
+        name: `Année ${year}-${parseInt(year) + 1}`,
+        children: data.courses[year]
+      }));
+    } else {
+      // Student Mode: Only latest year, filtered by class name
+      if (years.length === 0) return [];
+      const latestYear = years[0];
+      const items = data.courses[latestYear];
+      
+      // If it's the default tree, show it all
+      if (latestYear === 'Défaut') return items;
+
+      // Otherwise find the class folder
+      const classFolder = items.find(item => item.name === userClass && item.type === 'folder');
+      return classFolder ? classFolder.children : [];
     }
   };
 
-  const handlePrevPage = () => {
-    if (pageNum > 1) {
-      const prev = pageNum - 1;
-      setPageNum(prev);
-      renderPage(prev, pdfDoc);
+  const handleLogin = () => {
+    if (CLASS_PASSWORDS[pendingClass] === passwordInput) {
+      setUserClass(pendingClass);
+      sessionStorage.setItem('blender_group', pendingClass);
+      setLoginState('selection');
+      setPendingClass(null);
+      setPasswordInput('');
+      setLoginError('');
+    } else {
+      setLoginError('Mot de passe incorrect');
     }
   };
 
   const handleSelectFile = (file) => {
     setSelectedFile(file);
     if (isMobile) setSidebarOpen(false);
+  };
+
+  const handleSwitchClass = () => {
+    setUserClass(null);
+    sessionStorage.removeItem('blender_group');
+    setSelectedFile(null);
   };
 
   const renderTree = (items) => {
@@ -255,26 +318,65 @@ const Visionneuse = () => {
     });
   };
 
-  const years = Object.keys(data.courses).sort((a, b) => b - a);
-  const courseTree = years.map(year => ({
-    type: 'folder',
-    id: year,
-    name: `Année ${year}-${parseInt(year) + 1}`,
-    children: data.courses[year]
-  }));
-
   if (loading) {
     return (
       <div className="blender-viewer" style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: '20px' }}>
         <div className="spinner"></div>
-        <p style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Cahrgement du cours Blender...</p>
+        <p style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Connexion à Google Drive...</p>
       </div>
     );
   }
 
+  // If not logged in, show Overlay
+  if (!userClass) {
+    return (
+      <div className="blender-viewer" style={{ justifyContent: 'center', alignItems: 'center' }}>
+        <div className="login-overlay" style={{ display: 'flex', position: 'relative' }}>
+          <div className="login-box">
+            {loginState === 'selection' ? (
+              <>
+                <h2>Sélectionnez votre classe</h2>
+                <p>Choisissez votre classe pour accéder aux cours.</p>
+                <div id="class-selection" style={{ display: 'grid' }}>
+                  {['3D1', '3D2', 'DA3'].map(c => (
+                    <button key={c} className="class-button" onClick={() => { setPendingClass(c); setLoginState('password'); }}>
+                      {c}
+                    </button>
+                  ))}
+                  <button className="class-button prof-button" onClick={() => { setPendingClass('Prof'); setLoginState('password'); }}>
+                    Professeur
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div id="password-section">
+                <h2>Authentification</h2>
+                <p>Entrez le mot de passe pour {pendingClass}</p>
+                <input 
+                  type="password" 
+                  className="form-input"
+                  style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', marginBottom: '1rem', padding: '1rem' }}
+                  placeholder="Mot de passe"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+                  autoFocus
+                />
+                <button className="class-button" style={{ width: '100%' }} onClick={handleLogin}>Entrer</button>
+                <button className="secondary-button" onClick={() => { setLoginState('selection'); setLoginError(''); }}>Retour</button>
+                {loginError && <p className="error-msg">{loginError}</p>}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const filteredTree = getFilteredTree();
+
   return (
     <div className="blender-viewer">
-      {/* Sidebar Toggle Open (Mobile) */}
       <button 
         className={`sidebar-toggle-open ${!sidebarOpen ? 'visible' : ''}`}
         onClick={() => setSidebarOpen(true)}
@@ -289,13 +391,19 @@ const Visionneuse = () => {
         </div>
         <div className="brand-subtitle">
           Cours créé par Olivier Sudermann<br/>
-          <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>Mode Professeur - Accès Total</span>
+          <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>
+            {userClass === 'Prof' ? 'Mode Professeur - Accès Total' : `Cours ${userClass}`}
+          </span>
         </div>
+
+        <button className="switch-class-button" onClick={handleSwitchClass}>
+          Changer de classe
+        </button>
 
         <div className="sidebar-scroll">
           <div className="menu-label">Liste des cours</div>
           <ul className="course-list">
-            {renderTree(courseTree)}
+            {renderTree(filteredTree)}
           </ul>
 
           <div className="menu-label" style={{ marginTop: '2rem' }}>3D Tips</div>
@@ -319,16 +427,15 @@ const Visionneuse = () => {
           </div>
         ) : (
           <>
-            {/* Hybrid Viewer */}
             {isMobile && selectedFile.path.toLowerCase().endsWith('.pdf') ? (
               <div id="mobile-pdf-container">
                 <div id="mobile-viewer-controls">
-                  <button onClick={handlePrevPage}>Précédent</button>
+                  <button onClick={() => { if(pageNum > 1) { setPageNum(pageNum-1); renderPage(pageNum-1, pdfDoc); } }}>Précédent</button>
                   <div className="mobile-center-controls">
                     <button id="fullscreen-btn" onClick={() => canvasRef.current?.requestFullscreen()}>⛶</button>
                     <span id="page-info">Page {pageNum} / {pageCount}</span>
                   </div>
-                  <button onClick={handleNextPage}>Suivant</button>
+                  <button onClick={() => { if(pageNum < pageCount) { setPageNum(pageNum+1); renderPage(pageNum+1, pdfDoc); } }}>Suivant</button>
                 </div>
                 <div id="pdf-canvas-wrapper">
                   {isRendering && <div className="spinner" style={{ margin: '20px auto' }}></div>}

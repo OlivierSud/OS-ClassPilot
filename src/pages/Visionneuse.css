@@ -1,51 +1,52 @@
-/* Ported from original style.css, scoped to .blender-viewer */
+/* ─────────────────────────────────────────────────────────
+   Visionneuse Blender – Thème intégré au Design System ClassPilot
+   Utilise les variables de index.css : --bg-color, --card-bg,
+   --text-primary, --text-secondary, --primary, --secondary,
+   --shadow-*, --radius-*, --font-family
+───────────────────────────────────────────────────────── */
+
 .blender-viewer {
-    --bg-color: #0f0f13;
-    --sidebar-bg: rgba(25, 25, 35, 0.7);
-    --text-primary: #ffffff;
-    --text-secondary: #a0a0a0;
-    --accent-color: #ff7417; /* Blender Orange */
-    --accent-hover: #bc5206;
-    --glass-border: 1px solid rgba(255, 255, 255, 0.1);
-    --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
-    
     background-color: var(--bg-color);
     color: var(--text-primary);
     height: calc(100vh - 80px); /* Subtract ClassPilot bottom nav height */
     overflow: hidden;
     display: flex;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-family);
     position: relative;
     width: 100%;
 }
 
-/* Sidebar Styling */
+/* ─── Sidebar ──────────────────────────────────────────── */
 .blender-viewer .sidebar {
-    width: 300px;
+    width: 290px;
     height: 100%;
-    background: var(--sidebar-bg);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-right: var(--glass-border);
-    padding: 2rem 0 0.5rem 0;
+    background: var(--card-bg);
+    border-right: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 1.5rem 0 0.5rem 0;
     display: flex;
     flex-direction: column;
-    box-shadow: var(--glass-shadow);
+    box-shadow: var(--shadow-md);
     z-index: 10;
     flex-shrink: 0;
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
 }
 
-.blender-viewer .sidebar.closed {
-    margin-left: -300px;
+.dark .blender-viewer .sidebar {
+    background: var(--card-bg);
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.blender-viewer .sidebar.closed {
+    margin-left: -290px;
+}
+
+/* ─── Sidebar Brand ─────────────────────────────────────── */
 .blender-viewer .brand {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin-bottom: 0.2rem;
-    padding: 0 2rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.15rem;
+    padding: 0 1.5rem;
     color: var(--text-primary);
     letter-spacing: -0.5px;
     display: flex;
@@ -54,51 +55,78 @@
 }
 
 .blender-viewer .brand span {
-    color: var(--accent-color);
+    /* Petite touche orangée Blender, en accord avec --secondary */
+    color: var(--secondary);
 }
 
 .blender-viewer .brand-subtitle {
-    padding: 0 2rem;
-    font-size: 0.85rem;
+    padding: 0 1.5rem;
+    font-size: 0.8rem;
     color: var(--text-secondary);
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
     font-weight: 400;
-    line-height: 1.4;
+    line-height: 1.5;
 }
 
+/* ─── Sidebar Scroll ────────────────────────────────────── */
 .blender-viewer .sidebar-scroll {
     flex: 1;
     overflow-y: auto;
-    padding: 0 2rem;
+    padding: 0 1rem;
 }
 
+.blender-viewer .sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.blender-viewer .sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.blender-viewer .sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.12);
+  border-radius: 10px;
+}
+.dark .blender-viewer .sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+}
+
+/* ─── Sidebar Footer ────────────────────────────────────── */
 .blender-viewer .sidebar-footer {
-    padding: 1rem 2rem 0.5rem 2rem;
+    padding: 0.75rem 1.5rem 0.5rem 1.5rem;
     font-size: 0.7rem;
     color: var(--text-secondary);
-    opacity: 0.5;
+    opacity: 0.6;
     text-align: left;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
     margin-top: auto;
-    font-weight: 300;
+    font-weight: 400;
 }
 
+.dark .blender-viewer .sidebar-footer {
+    border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ─── Menu Labels ───────────────────────────────────────── */
 .blender-viewer .menu-label {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 1.5px;
-    color: var(--text-primary);
-    margin-bottom: 1rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
     font-weight: 600;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding-bottom: 0.5rem;
-    margin-top: 1.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    padding-bottom: 0.4rem;
+    margin-top: 1.25rem;
+}
+
+.dark .blender-viewer .menu-label {
+    border-bottom-color: rgba(255, 255, 255, 0.06);
 }
 
 .blender-viewer .menu-label:first-child {
     margin-top: 0;
 }
 
+/* ─── Course List & Items ───────────────────────────────── */
 .blender-viewer .course-list {
     list-style: none;
     padding: 0;
@@ -106,91 +134,110 @@
 }
 
 .blender-viewer .course-item {
-    margin-bottom: 0.25rem;
+    margin-bottom: 2px;
 }
 
 .blender-viewer .course-item-container {
     display: flex;
     align-items: flex-start;
-    gap: 0.5rem;
-    padding-right: 0.5rem;
-    border-radius: 6px;
-    transition: background 0.2s;
+    gap: 0.4rem;
+    border-radius: var(--radius-sm);
+    transition: background 0.15s ease;
 }
 
 .blender-viewer .course-item-container:hover {
+    background: rgba(59, 130, 246, 0.06);
+}
+.dark .blender-viewer .course-item-container:hover {
     background: rgba(255, 255, 255, 0.05);
 }
 
 .blender-viewer .course-link {
     flex: 1;
     display: block;
-    padding: 0.6rem 0.5rem;
-    border-radius: 6px 0 0 6px;
+    padding: 0.5rem 0.6rem;
+    border-radius: var(--radius-sm);
     color: var(--text-secondary);
     text-decoration: none;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
+    font-size: 0.875rem;
+    transition: all 0.15s ease;
     border-left: 3px solid transparent;
     white-space: normal;
     word-break: break-word;
+    line-height: 1.4;
 }
 
 .blender-viewer .course-link:hover {
     color: var(--text-primary);
-    padding-left: 0.75rem;
+    padding-left: 0.85rem;
 }
 
 .blender-viewer .course-link.active {
-    background: rgba(255, 116, 23, 0.2);
-    color: var(--accent-color);
-    border-left: 3px solid var(--accent-color);
-    padding-left: 0.75rem;
+    background: rgba(249, 115, 22, 0.1);
+    color: var(--secondary);
+    border-left: 3px solid var(--secondary);
+    padding-left: 0.85rem;
+    font-weight: 500;
 }
 
+.dark .blender-viewer .course-link.active {
+    background: rgba(249, 115, 22, 0.15);
+}
+
+/* ─── Folder ────────────────────────────────────────────── */
 .blender-viewer .folder-header {
     display: flex;
     align-items: center;
-    padding: 0.6rem 0.5rem;
+    padding: 0.5rem 0.6rem;
     cursor: pointer;
-    color: var(--text-secondary);
+    color: var(--text-primary);
     font-weight: 500;
-    transition: background 0.2s;
-    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: background 0.15s ease;
+    border-radius: var(--radius-sm);
     user-select: none;
 }
 
 .blender-viewer .folder-header:hover {
+    background: rgba(59, 130, 246, 0.06);
+}
+.dark .blender-viewer .folder-header:hover {
     background: rgba(255, 255, 255, 0.05);
 }
 
 .blender-viewer .folder-icon {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     margin-right: 0.5rem;
-    transition: transform 0.3s ease;
+    transition: transform 0.25s ease;
     width: 12px;
     display: inline-block;
+    color: var(--text-secondary);
+    flex-shrink: 0;
 }
 
 .blender-viewer .folder-header.open .folder-icon {
     transform: rotate(90deg);
-    color: var(--accent-color);
+    color: var(--primary);
 }
 
 .blender-viewer .submenu {
     list-style: none;
     padding-left: 1rem;
-    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    border-left: 2px solid var(--primary-light);
     margin-left: 0.75rem;
-    margin-top: 0.25rem;
+    margin-top: 2px;
 }
 
-/* Viewer Styles */
+.dark .blender-viewer .submenu {
+    border-left-color: rgba(59, 130, 246, 0.2);
+}
+
+/* ─── Main Content ──────────────────────────────────────── */
 .blender-viewer .main-content {
     flex: 1;
     height: 100%;
     position: relative;
-    background-image: radial-gradient(circle at top right, #1f1f2e 0%, #0f0f13 40%);
+    background-color: var(--bg-color);
     display: flex;
     flex-direction: column;
 }
@@ -199,7 +246,7 @@
     flex: 1;
     width: 100%;
     height: 100%;
-    background: #1a1a1a;
+    background: var(--bg-color);
 }
 
 .blender-viewer iframe {
@@ -208,6 +255,7 @@
     border: none;
 }
 
+/* ─── Empty State ───────────────────────────────────────── */
 .blender-viewer .empty-state {
     display: flex;
     flex-direction: column;
@@ -217,33 +265,48 @@
     color: var(--text-secondary);
     text-align: center;
     padding: 2rem;
+    gap: 0.75rem;
 }
 
 .blender-viewer .empty-state h2 {
-    font-size: 1.5rem;
+    font-size: 1.35rem;
+    font-weight: 700;
     color: var(--text-primary);
-    margin-bottom: 0.5rem;
 }
 
-/* Sidebar Toggle Buttons */
+.blender-viewer .empty-state p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    max-width: 280px;
+}
+
+/* ─── Sidebar Toggle Buttons ────────────────────────────── */
 .blender-viewer .sidebar-toggle-close {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
+    top: 0.75rem;
+    right: 0.75rem;
     background: transparent;
     border: none;
     color: var(--text-secondary);
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     cursor: pointer;
-    transition: color 0.2s;
+    transition: color 0.2s, background 0.2s;
     line-height: 1;
     z-index: 20;
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
+}
+
+.blender-viewer .sidebar-toggle-close:hover {
+    color: var(--text-primary);
+    background: rgba(0,0,0,0.06);
+}
+.dark .blender-viewer .sidebar-toggle-close:hover {
+    background: rgba(255,255,255,0.08);
 }
 
 .blender-viewer .sidebar-toggle-open {
@@ -251,141 +314,49 @@
     top: 50%;
     left: 0;
     transform: translateY(-50%);
-    background: var(--sidebar-bg);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 0 12px 12px 0;
-    padding: 1rem 0.5rem;
-    color: var(--accent-color);
-    font-size: 1rem;
+    background: var(--card-bg);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-left: none;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 0.9rem 0.5rem;
+    color: var(--primary);
+    font-size: 0.9rem;
     cursor: pointer;
     z-index: 900;
-    transition: left 0.3s ease, opacity 0.3s;
+    transition: left 0.3s ease, opacity 0.3s, box-shadow 0.2s;
     opacity: 0;
     pointer-events: none;
-    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow-md);
+}
+
+.dark .blender-viewer .sidebar-toggle-open {
+    background: var(--card-bg);
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
 .blender-viewer .sidebar-toggle-open.visible {
     opacity: 1;
     pointer-events: auto;
     left: 0;
-    top: 20%; /* Same as original animation endpoint */
+    top: 20%;
 }
 
-/* Mobile PDF.js Styles */
-.blender-viewer #mobile-pdf-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    background: #1a1a1a;
-    height: 100%;
-    overflow: hidden;
-}
-
-.blender-viewer #mobile-viewer-controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.8rem;
-    background: rgba(25, 25, 35, 0.9);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    z-index: 100;
-}
-
-.blender-viewer #mobile-viewer-controls button {
-    padding: 0.5rem 1rem;
-    background: var(--accent-color);
-    border: none;
-    border-radius: 4px;
-    color: white;
-    font-size: 0.8rem;
-    font-weight: 500;
-}
-
-.blender-viewer .mobile-center-controls {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.blender-viewer #fullscreen-btn {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    padding: 0.4rem 0.6rem !important;
-    font-size: 1.1rem !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    color: white;
-}
-
-.blender-viewer #page-info {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-}
-
-.blender-viewer #pdf-canvas-wrapper {
-    flex: 1;
-    overflow: hidden;       /* Clip zoomed canvas nicely */
-    overflow-x: hidden;
-    padding: 10px 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-    touch-action: none;     /* Let our JS handle all touch gestures */
-    -webkit-overflow-scrolling: touch;
-}
-
-.blender-viewer #pdf-canvas {
-    max-width: 100%;
-    height: auto !important;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-    background: white;
-    display: block;
-    margin: 0 auto;
-    touch-action: none;     /* Required for pinch-to-zoom to work */
-    will-change: transform; /* GPU acceleration */
-    transition: transform 0.05s linear;
-}
-
-.blender-viewer .spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid rgba(255, 255, 255, 0.1);
-    border-top: 3px solid var(--accent-color);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-@media (max-width: 768px) {
-    .blender-viewer .sidebar {
-        width: 100vw;
-        border-right: none;
-        padding-top: 4rem;
-    }
-    .blender-viewer .sidebar.closed {
-        margin-left: -100vw;
-    }
-}
-
-/* ─── Viewer Toolbar ──────────────────────────────────── */
+/* ─── Viewer Toolbar ────────────────────────────────────── */
 .blender-viewer .viewer-toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.6rem 1rem;
-    background: rgba(25, 25, 35, 0.95);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0.55rem 1rem;
+    background: var(--card-bg);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     flex-shrink: 0;
     gap: 1rem;
     z-index: 10;
+    box-shadow: var(--shadow-sm);
+}
+
+.dark .blender-viewer .viewer-toolbar {
+    border-bottom-color: rgba(255, 255, 255, 0.06);
 }
 
 .blender-viewer .viewer-filename {
@@ -401,27 +372,33 @@
 .blender-viewer .viewer-toolbar-actions {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
     flex-shrink: 0;
 }
 
 .blender-viewer .view-mode-toggle {
     display: flex;
-    background: rgba(0,0,0,0.3);
-    border-radius: 6px;
+    background: var(--bg-color);
+    border-radius: var(--radius-sm);
     padding: 3px;
     gap: 2px;
+    border: 1px solid rgba(0,0,0,0.07);
+}
+
+.dark .blender-viewer .view-mode-toggle {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.08);
 }
 
 .blender-viewer .vt-btn {
-    padding: 0.35rem 0.7rem;
+    padding: 0.3rem 0.65rem;
     font-size: 1rem;
-    border-radius: 5px;
+    border-radius: 6px;
     border: none;
     background: transparent;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
     line-height: 1;
     display: flex;
     align-items: center;
@@ -429,13 +406,145 @@
 }
 
 .blender-viewer .vt-btn:hover {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--primary);
+}
+.dark .blender-viewer .vt-btn:hover {
     background: rgba(255,255,255,0.1);
     color: var(--text-primary);
 }
 
 .blender-viewer .vt-btn.active {
-    background: var(--accent-color);
+    background: var(--primary);
     color: white;
-    box-shadow: 0 2px 8px rgba(255, 116, 23, 0.4);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
 }
 
+/* ─── Mobile PDF Controls ───────────────────────────────── */
+.blender-viewer #mobile-pdf-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-color);
+    height: 100%;
+    overflow: hidden;
+}
+
+.blender-viewer #mobile-viewer-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0.8rem;
+    background: var(--card-bg);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    z-index: 100;
+}
+
+.dark .blender-viewer #mobile-viewer-controls {
+    border-bottom-color: rgba(255,255,255,0.06);
+}
+
+.blender-viewer #mobile-viewer-controls button {
+    padding: 0.45rem 1rem;
+    background: var(--primary);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-family: var(--font-family);
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.blender-viewer #mobile-viewer-controls button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.blender-viewer .mobile-center-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.blender-viewer #fullscreen-btn {
+    background: var(--bg-color) !important;
+    border: 1px solid rgba(0,0,0,0.1) !important;
+    color: var(--text-primary) !important;
+    padding: 0.4rem 0.6rem !important;
+    font-size: 1.1rem !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+}
+
+.dark .blender-viewer #fullscreen-btn {
+    background: rgba(255,255,255,0.06) !important;
+    border-color: rgba(255,255,255,0.1) !important;
+}
+
+.blender-viewer #page-info {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+/* ─── PDF Canvas ────────────────────────────────────────── */
+.blender-viewer #pdf-canvas-wrapper {
+    flex: 1;
+    overflow: hidden;
+    overflow-x: hidden;
+    padding: 12px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    touch-action: none;
+    -webkit-overflow-scrolling: touch;
+    background: var(--bg-color);
+}
+
+.blender-viewer #pdf-canvas {
+    max-width: 100%;
+    height: auto !important;
+    box-shadow: var(--shadow-lg);
+    background: white;
+    display: block;
+    margin: 0 auto;
+    touch-action: none;
+    will-change: transform;
+    transition: transform 0.05s linear;
+    border-radius: 4px;
+}
+
+/* ─── Spinner ─────────────────────────────────────────────*/
+.blender-viewer .spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid rgba(59, 130, 246, 0.15);
+    border-top: 3px solid var(--primary);
+    border-radius: 50%;
+    animation: bv-spin 0.85s linear infinite;
+}
+
+@keyframes bv-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ─── Responsive Mobile ─────────────────────────────────── */
+@media (max-width: 768px) {
+    .blender-viewer .sidebar {
+        width: 100vw;
+        border-right: none;
+        padding-top: 3.5rem;
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+    }
+    .blender-viewer .sidebar.closed {
+        margin-left: -100vw;
+    }
+}

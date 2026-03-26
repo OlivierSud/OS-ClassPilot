@@ -123,7 +123,17 @@ const Visionneuse = () => {
   const fetchInitialData = useCallback(async () => {
     try {
       const rootContents = await getFolderContents(DRIVE_CONFIG.folderId);
+      
+      // Séparation des données
       let initialCourses = [];
+      let driveTips = [];
+      
+      const tipsFolder = rootContents.find(item => item.name.toLowerCase().trim() === 'tips');
+      if (tipsFolder) {
+        // Charge le contenu du dossier Tips sur Google Drive
+        driveTips = await getFolderContents(tipsFolder.id);
+      }
+
       let mainContainerFolder = rootContents.find(item => {
         const name = item.name.toLowerCase().trim();
         return name.includes('anné') || name === 'cours';
@@ -136,13 +146,14 @@ const Visionneuse = () => {
         if (yearFolders.length > 0) {
           initialCourses = yearFolders;
         } else {
-          initialCourses = rootContents;
+          // On exclut le dossier Tips des cours
+          initialCourses = rootContents.filter(item => item.name.toLowerCase().trim() !== 'tips');
         }
       }
 
       // Local Tips
       const baseUrl = import.meta.env.BASE_URL || '/';
-      const tips = [
+      const localTips = [
         {
           type: 'file',
           id: 'tip-1',
@@ -154,10 +165,11 @@ const Visionneuse = () => {
           id: 'tip-2',
           name: 'Raccourcis clavier',
           path: `${baseUrl}visionneuse/Tips/Raccourcis clavier/index.html`
-        },
+        }
       ];
 
-      setData({ courses: initialCourses, tips });
+      // Fusion des deux sources
+      setData({ courses: initialCourses, tips: [...driveTips, ...localTips] });
       setLoading(false);
 
       // Auto-expand the newest year (optional)

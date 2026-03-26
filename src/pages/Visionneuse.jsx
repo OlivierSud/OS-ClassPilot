@@ -470,9 +470,27 @@ const Visionneuse = () => {
 
   return (
     <div className="blender-viewer">
-      <button className={`sidebar-toggle-open ${!sidebarOpen ? 'visible' : ''}`} onClick={() => setSidebarOpen(true)}>▶</button>
+      <button 
+        className={`fab-menu ${sidebarOpen ? 'open' : ''}`}
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        aria-label="Toggle Menu"
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5">
+          {sidebarOpen ? (
+            <>
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </>
+          ) : (
+            <>
+              <line x1="4" y1="6" x2="20" y2="6"></line>
+              <line x1="4" y1="12" x2="16" y2="12"></line>
+              <line x1="4" y1="18" x2="11" y2="18"></line>
+            </>
+          )}
+        </svg>
+      </button>
       <nav className={`sidebar ${!sidebarOpen ? 'closed' : ''}`}>
-        <button className="sidebar-toggle-close" onClick={() => setSidebarOpen(false)}>×</button>
         <div className="brand"><span>3D</span> Blender</div>
         <div className="brand-subtitle">Cours créé par Olivier Sudermann<br/><span style={{ fontSize: '0.7rem', opacity: 0.7 }}>Accès Total (Professeur)</span></div>
         <div className="sidebar-scroll">
@@ -530,12 +548,10 @@ const Visionneuse = () => {
                     <line x1="12" y1="15" x2="12" y2="3"></line>
                   </svg>
                 </a>
-                {/* Fullscreen (page mode only) */}
-                {viewMode === 'page' && (
-                  <button className="vt-btn" onClick={toggleFullscreen} title={isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}>
-                    {isFullscreen ? '❐' : '⛶'}
-                  </button>
-                )}
+                {/* Fullscreen */}
+                <button className="vt-btn" onClick={toggleFullscreen} title={isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}>
+                  {isFullscreen ? '❐' : '⛶'}
+                </button>
               </div>
             </div>
 

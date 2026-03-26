@@ -280,65 +280,41 @@
     max-width: 280px;
 }
 
-/* ─── Sidebar Toggle Buttons ────────────────────────────── */
-.blender-viewer .sidebar-toggle-close {
+/* ─── Floating Menu Button (FAB) ────────────────────────── */
+.blender-viewer .fab-menu {
     position: absolute;
-    top: 0.75rem;
-    right: 0.75rem;
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 1.4rem;
-    cursor: pointer;
-    transition: color 0.2s, background 0.2s;
-    line-height: 1;
-    z-index: 20;
-    width: 30px;
-    height: 30px;
+    top: 0.55rem;
+    left: 0.8rem;
+    width: 44px;
+    height: 44px;
+    background: var(--card-bg);
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
-}
-
-.blender-viewer .sidebar-toggle-close:hover {
     color: var(--text-primary);
-    background: rgba(0,0,0,0.06);
-}
-.dark .blender-viewer .sidebar-toggle-close:hover {
-    background: rgba(255,255,255,0.08);
-}
-
-.blender-viewer .sidebar-toggle-open {
-    position: fixed;
-    top: 50%;
-    left: 0;
-    transform: translateY(-50%);
-    background: var(--card-bg);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    border-left: none;
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-    padding: 0.9rem 0.5rem;
-    color: var(--primary);
-    font-size: 0.9rem;
-    cursor: pointer;
-    z-index: 900;
-    transition: left 0.3s ease, opacity 0.3s, box-shadow 0.2s;
-    opacity: 0;
-    pointer-events: none;
     box-shadow: var(--shadow-md);
+    border: 1px solid rgba(0,0,0,0.06);
+    z-index: 1000;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.dark .blender-viewer .sidebar-toggle-open {
-    background: var(--card-bg);
+.blender-viewer .fab-menu.open {
+    left: calc(290px + 0.8rem);
+}
+
+.dark .blender-viewer .fab-menu {
     border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
 }
 
-.blender-viewer .sidebar-toggle-open.visible {
-    opacity: 1;
-    pointer-events: auto;
-    left: 0;
-    top: 20%;
+.blender-viewer .fab-menu:hover {
+    transform: scale(1.05);
+}
+
+.blender-viewer .fab-menu:active {
+    transform: scale(0.95);
 }
 
 /* ─── Viewer Toolbar ────────────────────────────────────── */
@@ -346,7 +322,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.55rem 1rem;
+    padding: 0.55rem 1rem 0.55rem 4.5rem; /* Espace laissé pour le Hamburger (FAB) */
     background: var(--card-bg);
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     flex-shrink: 0;
@@ -500,15 +476,25 @@
 
 /* ─── Responsive Mobile ─────────────────────────────────── */
 @media (max-width: 768px) {
+    .blender-viewer .fab-menu.open {
+        left: 0.8rem; /* Reste à sa place (overlay mode) sur mobile */
+    }
+
     .blender-viewer .sidebar {
         width: 100vw;
         border-right: none;
-        padding-top: 3.5rem;
+        padding-top: 2rem;
         position: absolute;
         top: 0;
         left: 0;
         height: 100%;
+        background: var(--card-bg);
     }
+    
+    .blender-viewer .brand {
+        padding-left: 4.5rem; /* Libère la place pour la croix de menu */
+    }
+
     .blender-viewer .sidebar.closed {
         margin-left: -100vw;
     }

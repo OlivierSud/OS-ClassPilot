@@ -168,8 +168,11 @@ const Visionneuse = () => {
         }
       ];
 
-      // Fusion des deux sources
-      setData({ courses: initialCourses, tips: [...driveTips, ...localTips] });
+      // Fusion des deux sources (sans doublons par nom)
+      const driveTipsNames = driveTips.map(item => item.name.replace('.pdf', '').toLowerCase().trim());
+      const filteredLocalTips = localTips.filter(item => !driveTipsNames.includes(item.name.replace('.pdf', '').toLowerCase().trim()));
+
+      setData({ courses: initialCourses, tips: [...driveTips, ...filteredLocalTips] });
       setLoading(false);
 
       // Auto-expand the newest year (optional)

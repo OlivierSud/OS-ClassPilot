@@ -13,7 +13,7 @@ const Visionneuse = () => {
   const [expandedFolders, setExpandedFolders] = useState({});
   const [loadingFolders, setLoadingFolders] = useState({});
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  
+
   // PDF.js State
   const [pdfDoc, setPdfDoc] = useState(null);
   const [pageNum, setPageNum] = useState(1);
@@ -21,7 +21,7 @@ const Visionneuse = () => {
   const [viewMode, setViewMode] = useState('page'); // 'page' | 'scroll'
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  
+
   const canvasRef = useRef(null);
   const canvasWrapperRef = useRef(null);
   const renderTaskRef = useRef(null);
@@ -58,7 +58,7 @@ const Visionneuse = () => {
     const response = await fetch(url);
     if (!response.ok) throw new Error("Failed to fetch folder");
     const resData = await response.json();
-    
+
     return (resData.files || []).map(file => ({
       id: file.id,
       name: file.name,
@@ -88,12 +88,12 @@ const Visionneuse = () => {
 
   const toggleFolder = async (folder) => {
     if (expandedFolders[folder.id]) {
-        setExpandedFolders(prev => {
-            const next = { ...prev };
-            delete next[folder.id];
-            return next;
-        });
-        return;
+      setExpandedFolders(prev => {
+        const next = { ...prev };
+        delete next[folder.id];
+        return next;
+      });
+      return;
     }
 
     setExpandedFolders(prev => ({ ...prev, [folder.id]: true }));
@@ -154,15 +154,10 @@ const Visionneuse = () => {
           id: 'tip-2',
           name: 'Raccourcis clavier',
           path: `${baseUrl}visionneuse/Tips/Raccourcis clavier/index.html`
-        }
-      ];
-
-      setData({ courses: initialCourses, tips });
-      setLoading(false);
-      
-      // Auto-expand the newest year (optional)
+        },
+      ]; Auto - expand the newest year(optional)
       if (initialCourses.length > 0) {
-        const newest = initialCourses.sort((a,b) => b.name.localeCompare(a.name))[0];
+        const newest = initialCourses.sort((a, b) => b.name.localeCompare(a.name))[0];
         // We'll expand it in the next frame to avoid issues
         setTimeout(() => toggleFolder(newest), 100);
       }
@@ -195,7 +190,7 @@ const Visionneuse = () => {
   // PDF.js Rendering Logic for Mobile
   const renderPage = useCallback(async (num, doc) => {
     if (!doc || !canvasRef.current || isRenderingRef.current) return;
-    
+
     isRenderingRef.current = true;
     setRenderingState(true);
     try {
@@ -206,7 +201,7 @@ const Visionneuse = () => {
       const page = await doc.getPage(num);
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
-      
+
       const viewport = page.getViewport({ scale: 2 });
       const wrapperWidth = canvas.parentElement.clientWidth - 20;
       const displayScale = wrapperWidth / viewport.width;
@@ -221,10 +216,10 @@ const Visionneuse = () => {
         canvasContext: ctx,
         viewport: finalViewport
       };
-      
+
       const renderTask = page.render(renderContext);
       renderTaskRef.current = renderTask;
-      
+
       await renderTask.promise;
     } catch (err) {
       if (err.name !== 'RenderingCancelledException') {
@@ -427,8 +422,8 @@ const Visionneuse = () => {
         return (
           <li key={item.id} className="course-item">
             <div className="course-item-container">
-              <a 
-                href="#" 
+              <a
+                href="#"
                 className={`course-link ${isActive ? 'active' : ''}`}
                 onClick={(e) => { e.preventDefault(); handleSelectFile(item); }}
               >
@@ -447,9 +442,9 @@ const Visionneuse = () => {
             {isExpanded && (
               <ul className="submenu">
                 {isLoading ? (
-                    <li style={{ padding: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Chargement...</li>
+                  <li style={{ padding: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Chargement...</li>
                 ) : (
-                    renderTree(item.children)
+                  renderTree(item.children)
                 )}
               </ul>
             )}
@@ -470,7 +465,7 @@ const Visionneuse = () => {
 
   return (
     <div className="blender-viewer">
-      <button 
+      <button
         className={`fab-menu ${sidebarOpen ? 'open' : ''}`}
         onClick={() => setSidebarOpen(!sidebarOpen)}
         aria-label="Toggle Menu"
@@ -492,7 +487,7 @@ const Visionneuse = () => {
       </button>
       <nav className={`sidebar ${!sidebarOpen ? 'closed' : ''}`}>
         <div className="brand"><span>3D</span> Blender</div>
-        <div className="brand-subtitle">Cours créé par Olivier Sudermann<br/><span style={{ fontSize: '0.7rem', opacity: 0.7 }}>Accès Total (Professeur)</span></div>
+        <div className="brand-subtitle">Cours créé par Olivier Sudermann<br /><span style={{ fontSize: '0.7rem', opacity: 0.7 }}>Accès Total (Professeur)</span></div>
         <div className="sidebar-scroll">
           <div className="menu-label">Liste des cours</div>
           <ul className="course-list">{renderTree(data.courses)}</ul>
@@ -533,12 +528,12 @@ const Visionneuse = () => {
                   </button>
                 </div>
                 {/* Download */}
-                <a 
-                  href={selectedFile.downloadUrl || selectedFile.path} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
+                <a
+                  href={selectedFile.downloadUrl || selectedFile.path}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   download
-                  className="vt-btn" 
+                  className="vt-btn"
                   title="Télécharger"
                   style={{ textDecoration: 'none' }}
                 >

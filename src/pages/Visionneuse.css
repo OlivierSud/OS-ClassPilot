@@ -430,65 +430,30 @@
     overflow: hidden;
 }
 
-.blender-viewer #mobile-viewer-controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.6rem 0.8rem;
+
+/* ─── Indicateur de page flottant ──────────────────────── */
+.blender-viewer .page-indicator {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
     background: var(--card-bg);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-    z-index: 100;
-}
-
-.dark .blender-viewer #mobile-viewer-controls {
-    border-bottom-color: rgba(255,255,255,0.06);
-}
-
-.blender-viewer #mobile-viewer-controls button {
-    padding: 0.45rem 1rem;
-    background: var(--primary);
-    border: none;
-    border-radius: var(--radius-sm);
-    color: white;
-    font-size: 0.8rem;
-    font-weight: 600;
-    font-family: var(--font-family);
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
-
-.blender-viewer #mobile-viewer-controls button:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-}
-
-.blender-viewer .mobile-center-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.blender-viewer #fullscreen-btn {
-    background: var(--bg-color) !important;
-    border: 1px solid rgba(0,0,0,0.1) !important;
-    color: var(--text-primary) !important;
-    padding: 0.4rem 0.6rem !important;
-    font-size: 1.1rem !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--radius-sm);
-}
-
-.dark .blender-viewer #fullscreen-btn {
-    background: rgba(255,255,255,0.06) !important;
-    border-color: rgba(255,255,255,0.1) !important;
-}
-
-.blender-viewer #page-info {
-    font-size: 0.85rem;
-    font-weight: 500;
     color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.8rem;
+    border-radius: 999px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    z-index: 20;
+    pointer-events: none;
+    user-select: none;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.dark .blender-viewer .page-indicator {
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
 /* ─── PDF Canvas ────────────────────────────────────────── */

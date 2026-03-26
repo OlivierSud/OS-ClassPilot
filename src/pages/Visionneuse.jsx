@@ -32,6 +32,12 @@ const Visionneuse = () => {
   const lastTouchRef = useRef(null);
   const lastTapRef = useRef(0);
 
+  // Refs stables pour la navigation par swipe (évite les closures périmées)
+  const pageNumRef = useRef(1);
+  const pageCountRef = useRef(0);
+  const pdfDocRef = useRef(null);
+  const navigatePageRef = useRef(null);
+
   // Detect mobile
   useEffect(() => {
     const handleResize = () => {
@@ -169,6 +175,18 @@ const Visionneuse = () => {
   useEffect(() => {
     fetchInitialData();
   }, [fetchInitialData]);
+
+  // Sync des refs de navigation (mis à jour à chaque render, pas de useEffect)
+  pageNumRef.current = pageNum;
+  pageCountRef.current = pageCount;
+  pdfDocRef.current = pdfDoc;
+  navigatePageRef.current = (delta) => {
+    const newPage = pageNumRef.current + delta;
+    if (newPage >= 1 && newPage <= pageCountRef.current && pdfDocRef.current) {
+      setPageNum(newPage);
+      renderPage(newPage, pdfDocRef.current);
+    }
+  };
 
   // Ref for rendering flag to avoid infinite loops in useCallback
   const isRenderingRef = useRef(false);
@@ -359,7 +377,19 @@ const Visionneuse = () => {
         initialDist = null;
         if (zoomRef.current.scale < 1) resetZoom();
       }
-      if (e.touches.length === 0) panStart = null;
+      if (e.touches.length === 0) {
+        // Swipe horizontal → navigation entre pages (seulement si pas zoomé)
+        if (panStart && Math.abs(zoomRef.current.scale - 1) < 0.15) {
+          const touch = e.changedTouches[0];
+          const deltaX = touch.clientX - panStart.x;
+          const deltaY = touch.clientY - panStart.y;
+          // Swipe valide : > 50px et plus horizontal que vertical
+          if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+            navigatePageRef.current?.(deltaX < 0 ? 1 : -1);
+          }
+        }
+        panStart = null;
+      }
     };
 
     wrapper.addEventListener('touchstart', onTouchStart, { passive: true });
@@ -496,21 +526,13 @@ const Visionneuse = () => {
             {/* ─── Viewer ──────────────────────────────────────── */}
             {viewMode === 'page' ? (
               <div id="mobile-pdf-container" style={{ display: 'flex' }}>
-                <div id="mobile-viewer-controls">
-                  <button
-                    onClick={() => { if (pageNum > 1) { const n = pageNum - 1; setPageNum(n); renderPage(n, pdfDoc); } }}
-                    disabled={pageNum <= 1}
-                  >Précédent</button>
-                  <div className="mobile-center-controls">
-                    <span id="page-info">Page {pageNum} / {pageCount}</span>
-                  </div>
-                  <button
-                    onClick={() => { if (pageNum < pageCount) { const n = pageNum + 1; setPageNum(n); renderPage(n, pdfDoc); } }}
-                    disabled={pageNum >= pageCount}
-                  >Suivant</button>
-                </div>
                 <div id="pdf-canvas-wrapper" ref={canvasWrapperRef}>
                   {renderingState && <div className="spinner" style={{ margin: '20px auto' }}></div>}
+                  {pageCount > 1 && (
+                    <div className="page-indicator">
+                      {pageNum} / {pageCount}
+                    </div>
+                  )}
                   <canvas ref={canvasRef} id="pdf-canvas"></canvas>
                 </div>
               </div>

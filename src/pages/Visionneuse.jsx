@@ -155,7 +155,12 @@ const Visionneuse = () => {
           name: 'Raccourcis clavier',
           path: `${baseUrl}visionneuse/Tips/Raccourcis clavier/index.html`
         },
-      ]; Auto - expand the newest year(optional)
+      ];
+
+      setData({ courses: initialCourses, tips });
+      setLoading(false);
+
+      // Auto-expand the newest year (optional)
       if (initialCourses.length > 0) {
         const newest = initialCourses.sort((a, b) => b.name.localeCompare(a.name))[0];
         // We'll expand it in the next frame to avoid issues

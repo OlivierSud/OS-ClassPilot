@@ -1,0 +1,501 @@
+/* ─────────────────────────────────────────────────────────
+   Visionneuse Blender – Thème intégré au Design System ClassPilot
+   Utilise les variables de index.css : --bg-color, --card-bg,
+   --text-primary, --text-secondary, --primary, --secondary,
+   --shadow-*, --radius-*, --font-family
+───────────────────────────────────────────────────────── */
+
+.blender-viewer {
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    height: calc(100vh - 80px); /* Subtract ClassPilot bottom nav height */
+    overflow: hidden;
+    display: flex;
+    font-family: var(--font-family);
+    position: relative;
+    width: 100%;
+}
+
+/* ─── Sidebar ──────────────────────────────────────────── */
+.blender-viewer .sidebar {
+    width: 290px;
+    height: 100%;
+    background: var(--card-bg);
+    border-right: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 1.5rem 0 0.5rem 0;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-md);
+    z-index: 10;
+    flex-shrink: 0;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.dark .blender-viewer .sidebar {
+    background: var(--card-bg);
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.blender-viewer .sidebar.closed {
+    margin-left: -290px;
+}
+
+/* ─── Sidebar Brand ─────────────────────────────────────── */
+.blender-viewer .brand {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.15rem;
+    padding: 0 1.5rem;
+    color: var(--text-primary);
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.blender-viewer .brand span {
+    /* Petite touche orangée Blender, en accord avec --secondary */
+    color: var(--secondary);
+}
+
+.blender-viewer .brand-subtitle {
+    padding: 0 1.5rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    font-weight: 400;
+    line-height: 1.5;
+}
+
+/* ─── Sidebar Scroll ────────────────────────────────────── */
+.blender-viewer .sidebar-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 1rem;
+}
+
+.blender-viewer .sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.blender-viewer .sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.blender-viewer .sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.12);
+  border-radius: 10px;
+}
+.dark .blender-viewer .sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+}
+
+/* ─── Sidebar Footer ────────────────────────────────────── */
+.blender-viewer .sidebar-footer {
+    padding: 0.75rem 1.5rem 0.5rem 1.5rem;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    opacity: 0.6;
+    text-align: left;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    margin-top: auto;
+    font-weight: 400;
+}
+
+.dark .blender-viewer .sidebar-footer {
+    border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ─── Menu Labels ───────────────────────────────────────── */
+.blender-viewer .menu-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    padding-bottom: 0.4rem;
+    margin-top: 1.25rem;
+}
+
+.dark .blender-viewer .menu-label {
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.blender-viewer .menu-label:first-child {
+    margin-top: 0;
+}
+
+/* ─── Course List & Items ───────────────────────────────── */
+.blender-viewer .course-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.blender-viewer .course-item {
+    margin-bottom: 2px;
+}
+
+.blender-viewer .course-item-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    border-radius: var(--radius-sm);
+    transition: background 0.15s ease;
+}
+
+.blender-viewer .course-item-container:hover {
+    background: rgba(59, 130, 246, 0.06);
+}
+.dark .blender-viewer .course-item-container:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.blender-viewer .course-link {
+    flex: 1;
+    display: block;
+    padding: 0.5rem 0.6rem;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: all 0.15s ease;
+    border-left: 3px solid transparent;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.4;
+}
+
+.blender-viewer .course-link:hover {
+    color: var(--text-primary);
+    padding-left: 0.85rem;
+}
+
+.blender-viewer .course-link.active {
+    background: rgba(249, 115, 22, 0.1);
+    color: var(--secondary);
+    border-left: 3px solid var(--secondary);
+    padding-left: 0.85rem;
+    font-weight: 500;
+}
+
+.dark .blender-viewer .course-link.active {
+    background: rgba(249, 115, 22, 0.15);
+}
+
+/* ─── Folder ────────────────────────────────────────────── */
+.blender-viewer .folder-header {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.6rem;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: background 0.15s ease;
+    border-radius: var(--radius-sm);
+    user-select: none;
+}
+
+.blender-viewer .folder-header:hover {
+    background: rgba(59, 130, 246, 0.06);
+}
+.dark .blender-viewer .folder-header:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.blender-viewer .folder-icon {
+    font-size: 0.65rem;
+    margin-right: 0.5rem;
+    transition: transform 0.25s ease;
+    width: 12px;
+    display: inline-block;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.blender-viewer .folder-header.open .folder-icon {
+    transform: rotate(90deg);
+    color: var(--primary);
+}
+
+.blender-viewer .submenu {
+    list-style: none;
+    padding-left: 1rem;
+    border-left: 2px solid var(--primary-light);
+    margin-left: 0.75rem;
+    margin-top: 2px;
+}
+
+.dark .blender-viewer .submenu {
+    border-left-color: rgba(59, 130, 246, 0.2);
+}
+
+/* ─── Main Content ──────────────────────────────────────── */
+.blender-viewer .main-content {
+    flex: 1;
+    height: 100%;
+    position: relative;
+    background-color: var(--bg-color);
+    display: flex;
+    flex-direction: column;
+}
+
+.blender-viewer #pdf-container {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-color);
+}
+
+.blender-viewer iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* ─── Empty State ───────────────────────────────────────── */
+.blender-viewer .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 2rem;
+    gap: 0.75rem;
+}
+
+.blender-viewer .empty-state h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.blender-viewer .empty-state p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    max-width: 280px;
+}
+
+/* ─── Floating Menu Button (FAB) ────────────────────────── */
+.blender-viewer .fab-menu {
+    position: absolute;
+    top: 0.55rem;
+    left: 0.8rem;
+    width: 44px;
+    height: 44px;
+    background: var(--card-bg);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary);
+    box-shadow: var(--shadow-md);
+    border: 1px solid rgba(0,0,0,0.06);
+    z-index: 1000;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.blender-viewer .fab-menu.open {
+    left: calc(290px + 0.8rem);
+}
+
+.dark .blender-viewer .fab-menu {
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+.blender-viewer .fab-menu:hover {
+    transform: scale(1.05);
+}
+
+.blender-viewer .fab-menu:active {
+    transform: scale(0.95);
+}
+
+/* ─── Viewer Toolbar ────────────────────────────────────── */
+.blender-viewer .viewer-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.55rem 1rem 0.55rem 4.5rem; /* Espace laissé pour le Hamburger (FAB) */
+    background: var(--card-bg);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    flex-shrink: 0;
+    gap: 1rem;
+    z-index: 10;
+    box-shadow: var(--shadow-sm);
+}
+
+.dark .blender-viewer .viewer-toolbar {
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.blender-viewer .viewer-filename {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 60%;
+}
+
+.blender-viewer .viewer-toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
+
+.blender-viewer .view-mode-toggle {
+    display: flex;
+    background: var(--bg-color);
+    border-radius: var(--radius-sm);
+    padding: 3px;
+    gap: 2px;
+    border: 1px solid rgba(0,0,0,0.07);
+}
+
+.dark .blender-viewer .view-mode-toggle {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.08);
+}
+
+.blender-viewer .vt-btn {
+    padding: 0.3rem 0.65rem;
+    font-size: 1rem;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.blender-viewer .vt-btn:hover {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--primary);
+}
+.dark .blender-viewer .vt-btn:hover {
+    background: rgba(255,255,255,0.1);
+    color: var(--text-primary);
+}
+
+.blender-viewer .vt-btn.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+}
+
+/* ─── Mobile PDF Controls ───────────────────────────────── */
+.blender-viewer #mobile-pdf-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-color);
+    height: 100%;
+    overflow: hidden;
+}
+
+
+/* ─── Indicateur de page flottant ──────────────────────── */
+.blender-viewer .page-indicator {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--card-bg);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.8rem;
+    border-radius: 999px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    z-index: 20;
+    pointer-events: none;
+    user-select: none;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.dark .blender-viewer .page-indicator {
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ─── PDF Canvas ────────────────────────────────────────── */
+.blender-viewer #pdf-canvas-wrapper {
+    flex: 1;
+    overflow: hidden;
+    overflow-x: hidden;
+    padding: 12px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    touch-action: none;
+    -webkit-overflow-scrolling: touch;
+    background: var(--bg-color);
+}
+
+.blender-viewer #pdf-canvas {
+    max-width: 100%;
+    height: auto !important;
+    box-shadow: var(--shadow-lg);
+    background: white;
+    display: block;
+    margin: 0 auto;
+    touch-action: none;
+    will-change: transform;
+    transition: transform 0.05s linear;
+    border-radius: 4px;
+}
+
+/* ─── Spinner ─────────────────────────────────────────────*/
+.blender-viewer .spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid rgba(59, 130, 246, 0.15);
+    border-top: 3px solid var(--primary);
+    border-radius: 50%;
+    animation: bv-spin 0.85s linear infinite;
+}
+
+@keyframes bv-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ─── Responsive Mobile ─────────────────────────────────── */
+@media (max-width: 768px) {
+    .blender-viewer .fab-menu.open {
+        left: 0.8rem; /* Reste à sa place (overlay mode) sur mobile */
+    }
+
+    .blender-viewer .sidebar {
+        width: 100vw;
+        border-right: none;
+        padding-top: 2rem;
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        background: var(--card-bg);
+    }
+    
+    .blender-viewer .brand {
+        padding-left: 4.5rem; /* Libère la place pour la croix de menu */
+    }
+
+    .blender-viewer .sidebar.closed {
+        margin-left: -100vw;
+    }
+}

@@ -12,18 +12,18 @@ const AssignmentCard = ({ assignment, onClick, onEditClick }) => {
       onClick={onClick}
       className={`card flex flex-col gap-2 ${onClick ? 'cursor-pointer' : ''}`}
       style={{ 
-        padding: '10px 16px', 
+        padding: '8px 12px', 
         borderLeft: '4px solid var(--error)', 
-        marginBottom: '12px',
+        marginBottom: '8px',
         position: 'relative',
         background: 'var(--card-bg)'
       }}
     >
       <div className="flex items-start justify-between">
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="flex items-center gap-8" style={{ marginBottom: '4px' }}>
+          <div className="flex items-center gap-6" style={{ marginBottom: '2px' }}>
             <BookOpen size={16} className="text-secondary" />
-            <h4 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {classes?.name}
             </h4>
           </div>
@@ -31,7 +31,7 @@ const AssignmentCard = ({ assignment, onClick, onEditClick }) => {
             <p style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {title}
             </p>
-            <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--error)', background: 'var(--error-light)', padding: '2px 8px', borderRadius: '6px' }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--error)', background: 'var(--error-light)', padding: '2px 8px', borderRadius: '6px' }}>
               Due {new Date(due_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
             </span>
           </div>

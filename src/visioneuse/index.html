@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O.S. Blender Course - PDF Viewer</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- PDF.js for Mobile Compatibility -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Set worker path
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+</head>
+
+<body>
+
+    <!-- Login Overlay -->
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-box">
+            <h2 id="login-title">Sélectionnez votre classe</h2>
+            <p id="login-subtitle">Choisissez votre classe pour accéder aux cours.</p>
+
+            <!-- Class selection buttons (initially visible) -->
+            <div id="class-selection">
+                <p class="loading-data">Chargement des classes depuis Google Drive...</p>
+                <div class="login-spinner"></div>
+            </div>
+
+            <!-- Password input (initially hidden) -->
+            <div id="password-section" style="display: none;">
+                <p id="selected-class-label" style="margin-bottom: 1rem; color: var(--accent-color); font-weight: 600;">
+                </p>
+                <input type="password" id="password-input" placeholder="Mot de passe">
+                <button id="login-button">Entrer</button>
+                <button id="back-button" class="secondary-button">Retour</button>
+                <p id="login-error" class="error-msg" style="display: none;"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <nav id="sidebar" class="sidebar">
+        <button id="sidebar-close" class="sidebar-toggle-close">×</button>
+        <div class="brand">
+            <span>3D</span> Blender
+        </div>
+        <div class="brand-subtitle">Cours créé par Olivier Sudermann
+        </div>
+
+        <!-- Logout/Switch Class Button -->
+        <button id="switch-class-btn" class="switch-class-button" style="display: none;">
+            Changer de classe
+        </button>
+
+        <div class="sidebar-scroll">
+            <div class="menu-label">Liste des cours</div>
+
+            <ul id="course-list" class="course-list">
+                <!-- Items are injected here by app.js -->
+            </ul>
+
+            <div class="menu-label" style="margin-top: 2rem;">3D Tips</div>
+
+            <ul id="tips-list" class="course-list">
+                <!-- Items are injected here by app.js -->
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">
+            <a href="https://oliviersudermann.wixsite.com/olivier-sudermann" target="_blank" rel="noopener noreferrer">
+                Cours réalisé par Olivier Sudermann
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Viewer Area -->
+    <main class="main-content">
+        <div id="empty-state" class="empty-state">
+            <h2>Bienvenue au cours de Blender</h2>
+            <p>Sélectionnez le cours dans le menu de gauche pour commencer.</p>
+        </div>
+
+        <div id="pdf-container" style="display: none;">
+            <iframe id="pdf-viewer" src="" title="PDF Viewer"></iframe>
+        </div>
+
+        <!-- Mobile-Specific PDF.js Viewer -->
+        <div id="mobile-pdf-container" style="display: none;">
+            <div id="mobile-viewer-controls">
+                <button id="prev-page">Précédent</button>
+                <div class="mobile-center-controls">
+                    <button id="fullscreen-btn" title="Plein écran">⛶</button>
+                    <span id="page-info">Page <span id="page-num">0</span> / <span id="page-count">0</span></span>
+                </div>
+                <button id="next-page">Suivant</button>
+            </div>
+            <div id="pdf-canvas-wrapper">
+                <div id="pdf-loader" class="pdf-loader" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Chargement du cours...</p>
+                </div>
+                <canvas id="pdf-canvas"></canvas>
+            </div>
+        </div>
+
+        <div id="global-loader" class="loader-overlay" style="display:none;">
+            <div class="loader-content">
+                <div class="spinner"></div>
+                <p>Chargement du document...</p>
+            </div>
+        </div>
+    </main>
+
+    <button id="sidebar-open" class="sidebar-toggle-open">▶</button>
+
+    <script src="googleDrive.js"></script>
+    <script src="tips_data.js"></script>
+    <script src="app.js"></script>
+    <script src="login.js"></script>
+</body>
+
+</html>

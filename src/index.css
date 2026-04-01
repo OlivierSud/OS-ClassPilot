@@ -49,7 +49,7 @@
   --bg-color: #020617;
   --card-bg: #111827;
   --text-primary: #ffffff;
-  --text-secondary: #94a3b8;
+  --text-secondary: #cbd5e1; /* Plus clair pour lisibilité */
   --text-on-accent: #ffffff;
   
   --primary-light: rgba(59, 130, 246, 0.2);
@@ -83,8 +83,9 @@
 }
 
 .dark .premium-menu {
-  background: #0f172a !important; /* Navy profond */
-  border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+  background: linear-gradient(160deg, #1e3a8a 0%, #0f172a 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8) !important;
 }
 
 .menu-item {
@@ -180,8 +181,10 @@
   box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
 }
 .dark .text-error { color: #f87171; }
-.dark .text-slate-400 { color: #94a3b8; }
+.dark .text-slate-400 { color: #cbd5e1; }
+.dark .text-slate-500 { color: #94a3b8; }
 .dark .text-slate-600 { color: #cbd5e1; }
+.dark .border-slate-100 { border-color: rgba(255, 255, 255, 0.1); }
 .dark .border-slate-200 { border-color: rgba(255, 255, 255, 0.1); }
 
 * {

@@ -537,3 +537,11 @@ a {
 .border-b { border-bottom: 1px solid; }
 .border-slate-50 { border-color: #f8fafc; }
 .last\:border-0:last-child { border-bottom-width: 0; }
+
+/* Brand Colors */
+.bg-github { background-color: #0f172a; }
+.bg-google-pdf { background-color: #2563eb; }
+
+.dark .bg-github { background-color: #020617; }
+.dark .bg-google-pdf { background-color: #1d4ed8; }
+

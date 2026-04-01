@@ -11,6 +11,7 @@ import Login from './pages/Login';
 import { useNotifications } from './hooks/useNotifications';
 
 import Settings from './pages/Settings';
+import Blender from './pages/Blender';
 
 function App() {
   useNotifications();
@@ -53,6 +54,7 @@ function App() {
         <Route path="/" element={session ? <Layout /> : <Navigate to="/login" />}>
           <Route index element={<Dashboard />} />
           <Route path="calendar" element={<Calendar />} />
+          <Route path="blender" element={<Blender />} />
           <Route path="classes" element={<Classes />} />
           <Route path="class/:id" element={<ClassDetail />} />
           <Route path="assignment/:id" element={<AssignmentDetail />} />

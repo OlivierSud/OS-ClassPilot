@@ -1,4 +1,4 @@
-import { Home, Calendar, Users, Settings } from 'lucide-react';
+import { Home, Calendar, Users, Settings, Compass } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 
 const Layout = () => {
@@ -16,6 +16,10 @@ const Layout = () => {
         <NavLink to="/calendar" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <Calendar />
           <span>Calendrier</span>
+        </NavLink>
+        <NavLink to="/blender" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+          <Compass />
+          <span>Blender</span>
         </NavLink>
         <NavLink to="/classes" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <Users />

@@ -151,28 +151,33 @@ const Visionneuse = () => {
         }
       }
 
-      // Local Tips
-      const baseUrl = import.meta.env.BASE_URL || '/';
-      const localTips = [
-        {
-          type: 'file',
-          id: 'tip-1',
-          name: 'Interface et base de modélisation',
-          path: `${baseUrl}visionneuse/Tips/Interface et base de modélisation.pdf`
-        },
-        {
-          type: 'file',
-          id: 'tip-2',
-          name: 'Raccourcis clavier',
-          path: `${baseUrl}visionneuse/Tips/Raccourcis clavier/index.html`
+      // Github Tips (au lieu de localTips)
+      let githubTips = [];
+      try {
+        const githubRes = await fetch('https://api.github.com/repos/OlivierSud/OS-blender-course/contents/Tips');
+        if (githubRes.ok) {
+          const ghData = await githubRes.json();
+          githubTips = ghData.map(item => {
+            const isDir = item.type === 'dir';
+            return {
+              type: 'file',
+              id: `github-${item.sha}`,
+              name: item.name.replace('.html', ''),
+              path: isDir 
+                ? `https://oliviersud.github.io/OS-blender-course/Tips/${encodeURIComponent(item.name)}/index.html`
+                : `https://oliviersud.github.io/OS-blender-course/Tips/${encodeURIComponent(item.name)}`
+            };
+          });
         }
-      ];
+      } catch (err) {
+        console.error("Erreur lors de la récupération des tips Github:", err);
+      }
 
       // Fusion des deux sources (sans doublons par nom)
       const driveTipsNames = driveTips.map(item => item.name.replace('.pdf', '').toLowerCase().trim());
-      const filteredLocalTips = localTips.filter(item => !driveTipsNames.includes(item.name.replace('.pdf', '').toLowerCase().trim()));
+      const filteredGithubTips = githubTips.filter(item => !driveTipsNames.includes(item.name.toLowerCase().trim()));
 
-      setData({ courses: initialCourses, tips: [...driveTips, ...filteredLocalTips] });
+      setData({ courses: initialCourses, tips: [...driveTips, ...filteredGithubTips] });
       setLoading(false);
 
       // Auto-expand the newest year (optional)

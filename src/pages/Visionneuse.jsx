@@ -536,38 +536,42 @@ const Visionneuse = () => {
               <span className="viewer-filename">{selectedFile.name.replace('.pdf', '')}</span>
               <div className="viewer-toolbar-actions">
                 {/* View Mode Toggle */}
-                <div className="view-mode-toggle">
-                  <button
-                    className={`vt-btn ${viewMode === 'page' ? 'active' : ''}`}
-                    onClick={() => setViewMode('page')}
-                    title="Page par page"
-                  >
-                    □
-                  </button>
-                  <button
-                    className={`vt-btn ${viewMode === 'scroll' ? 'active' : ''}`}
-                    onClick={() => setViewMode('scroll')}
-                    title="Défilement continu"
-                  >
-                    ☰
-                  </button>
-                </div>
+                {(selectedFile.path?.toLowerCase().includes('.pdf') || selectedFile.path?.includes('/preview')) && (
+                  <div className="view-mode-toggle">
+                    <button
+                      className={`vt-btn ${viewMode === 'page' ? 'active' : ''}`}
+                      onClick={() => setViewMode('page')}
+                      title="Page par page"
+                    >
+                      □
+                    </button>
+                    <button
+                      className={`vt-btn ${viewMode === 'scroll' ? 'active' : ''}`}
+                      onClick={() => setViewMode('scroll')}
+                      title="Défilement continu"
+                    >
+                      ☰
+                    </button>
+                  </div>
+                )}
                 {/* Download */}
-                <a
-                  href={selectedFile.downloadUrl || selectedFile.path}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  download
-                  className="vt-btn"
-                  title="Télécharger"
-                  style={{ textDecoration: 'none' }}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                  </svg>
-                </a>
+                {(selectedFile.downloadUrl || selectedFile.path?.toLowerCase().includes('.pdf') || selectedFile.path?.includes('/preview')) && (
+                  <a
+                    href={selectedFile.downloadUrl || selectedFile.path}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download
+                    className="vt-btn"
+                    title="Télécharger"
+                    style={{ textDecoration: 'none' }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="7 10 12 15 17 10"></polyline>
+                      <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                  </a>
+                )}
                 {/* Fullscreen */}
                 <button className="vt-btn" onClick={toggleFullscreen} title={isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}>
                   {isFullscreen ? '❐' : '⛶'}
@@ -576,7 +580,7 @@ const Visionneuse = () => {
             </div>
 
             {/* ─── Viewer ──────────────────────────────────────── */}
-            {viewMode === 'page' ? (
+            {viewMode === 'page' && (selectedFile.path?.toLowerCase().includes('.pdf') || selectedFile.path?.includes('/preview')) ? (
               <div id="mobile-pdf-container" style={{ display: 'flex' }}>
                 <div id="pdf-canvas-wrapper" ref={canvasWrapperRef}>
                   {renderingState && <div className="spinner" style={{ margin: '20px auto' }}></div>}

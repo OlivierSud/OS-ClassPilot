@@ -316,7 +316,7 @@ const Settings = () => {
         isDark={isDarkMode}
       />
 
-      <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 mt-8 ml-4">Compte</div>
+      <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 mt-8 ml-4">Compte Google pour calendrier</div>
       
       <SettingItem 
         icon={Calendar} 
@@ -336,34 +336,34 @@ const Settings = () => {
         )}
       </SettingItem>
 
-      {googleIdentity && (
-        <>
-          <SettingItem 
-            icon={isSyncing ? (props) => <Loader2 {...props} className="animate-spin" /> : Clock} 
-            label={isSyncing ? "Synchronisation en cours..." : "Synchroniser tout l'agenda"} 
-            value={isSyncing ? "Veuillez patienter" : "Pousse tous les cours vers Google"}
-            color={isSyncing ? "#f59e0b" : "var(--success)"} 
-            onClick={async () => {
-              if (isSyncing) return;
-              setIsSyncing(true);
-              await syncAllEventsToGoogle();
-              setIsSyncing(false);
-            }}
-            isDark={isDarkMode}
-          />
-          
-          <SettingItem 
-            icon={Trash2} 
-            label="Supprimer & Déconnecter Google" 
-            value="Action irréversible sur votre agenda"
-            color="var(--error)" 
-            onClick={handleDisconnectGoogle}
-            isDark={isDarkMode}
-          />
-        </>
-      )}
+      <div style={{ opacity: googleIdentity ? 1 : 0.4, pointerEvents: googleIdentity ? 'auto' : 'none', transition: 'all 0.3s ease' }}>
+        <SettingItem 
+          icon={isSyncing ? function SpinLoader(props) {
+            return <Loader2 {...props} style={{ animation: 'spin 1s linear infinite' }} />;
+          } : Clock} 
+          label={isSyncing ? "Synchronisation en cours..." : "Synchroniser tout l'agenda"} 
+          value={isSyncing ? "Veuillez patienter" : "Pousse tous les cours vers Google"}
+          color={isSyncing ? "#f59e0b" : (googleIdentity ? "var(--success)" : "#94a3b8")} 
+          onClick={async () => {
+            if (isSyncing || !googleIdentity) return;
+            setIsSyncing(true);
+            await syncAllEventsToGoogle();
+            setIsSyncing(false);
+          }}
+          isDark={isDarkMode}
+        />
+        
+        <SettingItem 
+          icon={Trash2} 
+          label="Supprimer & Déconnecter Google" 
+          value="Action irréversible sur votre agenda"
+          color={googleIdentity ? "var(--error)" : "#94a3b8"} 
+          onClick={googleIdentity ? handleDisconnectGoogle : null}
+          isDark={isDarkMode}
+        />
+      </div>
 
-      {/* Synchroniser tout l'agenda n'apparait pas si pas connecté (fait par le wrapper au-dessus) */}
+      <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 mt-8 ml-4">Compte ClassPilot</div>
 
       <SettingItem 
         icon={LogOut} 

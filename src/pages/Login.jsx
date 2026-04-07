@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
 import { Download } from 'lucide-react';
@@ -190,6 +191,16 @@ const Login = () => {
             )}
           </button>
         </form>
+        
+        {/* Liens légaux */}
+        <div style={{ marginTop: '30px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>
+          <Link to="/privacy" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>
+            Règles de confidentialité
+          </Link>
+          <Link to="/terms" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>
+            Conditions d'utilisation
+          </Link>
+        </div>
       </motion.div>
     </div>
   );

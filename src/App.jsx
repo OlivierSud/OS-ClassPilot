@@ -12,6 +12,8 @@ import { useNotifications } from './hooks/useNotifications';
 
 import Settings from './pages/Settings';
 import Visionneuse from './pages/Visionneuse';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
 
 function App() {
   useNotifications();
@@ -55,6 +57,8 @@ function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
         <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
         <Route path="/" element={session ? <Layout /> : <Navigate to="/login" />}>
           <Route index element={<Dashboard />} />

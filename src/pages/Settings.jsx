@@ -46,7 +46,7 @@ const Settings = () => {
       provider: 'google',
       options: {
         redirectTo: window.location.origin + window.location.pathname,
-        scopes: 'https://www.googleapis.com/auth/calendar.events',
+        scopes: 'https://www.googleapis.com/auth/calendar',
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',

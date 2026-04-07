@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { LogOut, Sun, Moon, Bell, ChevronRight, Download, Clock, Calendar, Trash2, Smartphone, Loader2 } from 'lucide-react';
+import { LogOut, Sun, Moon, Bell, ChevronRight, Download, Clock, Calendar, Trash2, Smartphone, Loader2, Shield, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
 import { usePWA } from '../context/PWAContext';
@@ -18,6 +19,7 @@ const Settings = () => {
   const [showDebug, setShowDebug] = useState(false);
   const [googleIdentity, setGoogleIdentity] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchIdentities() {
@@ -378,6 +380,25 @@ const Settings = () => {
         value="Action irréversible"
         color="var(--error)" 
         onClick={handleDeleteAccount}
+        isDark={isDarkMode}
+      />
+
+      <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 mt-8 ml-4">Légal</div>
+
+      <SettingItem 
+        icon={Shield} 
+        label="Règles de confidentialité" 
+        value="Protection des données"
+        color="#831843" 
+        onClick={() => navigate('/privacy')}
+        isDark={isDarkMode}
+      />
+      <SettingItem 
+        icon={FileText} 
+        label="Conditions d'utilisation" 
+        value="Règles du service"
+        color="#312e81" 
+        onClick={() => navigate('/terms')}
         isDark={isDarkMode}
       />
 

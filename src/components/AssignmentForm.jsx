@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { syncEventToGoogleCalendar, isGoogleConnected } from '../lib/googleCalendar';
 
 const AssignmentForm = ({ onClose, onSuccess, initialData }) => {
   const [classes, setClasses] = useState([]);
@@ -52,6 +53,16 @@ const AssignmentForm = ({ onClose, onSuccess, initialData }) => {
         ]);
 
     if (!error) {
+      if (await isGoogleConnected()) {
+        const className = classes.find(c => c.id === formData.class_id)?.name || "?";
+        await syncEventToGoogleCalendar({
+          title: `[Rendu] ${className} - ${formData.title}`,
+          description: formData.description,
+          start_time: new Date(dataToSave.due_date).toISOString(),
+          isAllDay: true
+        });
+      }
+
       if (onSuccess) onSuccess();
       onClose();
     } else {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LogOut, Sun, Moon, Bell, ChevronRight, Download, Clock, Calendar, Trash2, Smartphone } from 'lucide-react';
+import { LogOut, Sun, Moon, Bell, ChevronRight, Download, Clock, Calendar, Trash2, Smartphone, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
 import { usePWA } from '../context/PWAContext';
@@ -17,6 +17,7 @@ const Settings = () => {
   });
   const [showDebug, setShowDebug] = useState(false);
   const [googleIdentity, setGoogleIdentity] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     async function fetchIdentities() {
@@ -329,7 +330,7 @@ const Settings = () => {
           <img 
             src={googleIdentity.identity_data.avatar_url} 
             alt="Google" 
-            className="w-5 h-5 rounded-full border border-slate-100 shadow-sm"
+            className="w-4 h-4 rounded-full border border-slate-100 shadow-sm"
             style={{ pointerEvents: 'none' }}
           />
         )}
@@ -338,15 +339,15 @@ const Settings = () => {
       {googleIdentity && (
         <>
           <SettingItem 
-            icon={Clock} 
-            label="Synchroniser tout l'agenda" 
-            value="Pousse tous les cours vers Google"
-            color="var(--success)" 
+            icon={isSyncing ? (props) => <Loader2 {...props} className="animate-spin" /> : Clock} 
+            label={isSyncing ? "Synchronisation en cours..." : "Synchroniser tout l'agenda"} 
+            value={isSyncing ? "Veuillez patienter" : "Pousse tous les cours vers Google"}
+            color={isSyncing ? "#f59e0b" : "var(--success)"} 
             onClick={async () => {
-              const success = await syncAllEventsToGoogle();
-              if (success) {
-                // Optionnel
-              }
+              if (isSyncing) return;
+              setIsSyncing(true);
+              await syncAllEventsToGoogle();
+              setIsSyncing(false);
             }}
             isDark={isDarkMode}
           />

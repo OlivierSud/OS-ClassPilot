@@ -51,24 +51,34 @@ export async function syncEventToGoogleCalendar(eventDetails) {
   try {
     const calendarId = await getOrCreateCalendarId(token);
 
+    let eventBody = {
+      summary: eventDetails.title,
+      description: eventDetails.description || "Ajouté depuis ClassPilot",
+    };
+
+    if (eventDetails.isAllDay) {
+      const endDate = new Date(eventDetails.start_time);
+      endDate.setDate(endDate.getDate() + 1);
+      eventBody.start = { date: new Date(eventDetails.start_time).toISOString().split('T')[0] };
+      eventBody.end = { date: endDate.toISOString().split('T')[0] };
+    } else {
+      eventBody.start = {
+        dateTime: eventDetails.start_time,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      };
+      eventBody.end = {
+        dateTime: eventDetails.end_time || eventDetails.start_time,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      };
+    }
+
     const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        summary: eventDetails.title,
-        description: eventDetails.description || "Ajouté depuis ClassPilot",
-        start: {
-          dateTime: eventDetails.start_time,
-          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-        },
-        end: {
-          dateTime: eventDetails.end_time || eventDetails.start_time,
-          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-        }
-      })
+      body: JSON.stringify(eventBody)
     });
 
     if (!response.ok) {
@@ -111,15 +121,41 @@ export async function syncAllEventsToGoogle() {
       .eq('completed', false)
       .gte('due_date', now);
 
+    // Récupérer les événements *déjà existants* sur Google Calendar
+    const eventsRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?maxResults=2500`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const existingEventsData = await eventsRes.json();
+    const googleEvents = existingEventsData.items || [];
+
+    // Helper pour vérifier l'existence
+    const isAlreadySynced = (summary, startTimeStr) => {
+      return googleEvents.some(ge => {
+        // match sur le titre
+        if (ge.summary !== summary) return false;
+        // match sur la date de début
+        const geStartTime = ge.start?.dateTime || ge.start?.date;
+        if (!geStartTime) return false;
+        return new Date(geStartTime).getTime() === new Date(startTimeStr).getTime();
+      });
+    };
+
     let count = 0;
 
     if (courses) {
       for (const course of courses) {
+        const summary = `[${course.classes?.name || 'Cours'}] ${course.title}`;
+        
+        // On évite les doublons !
+        if (isAlreadySynced(summary, course.start_time)) {
+          continue; 
+        }
+
         await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            summary: `[${course.classes?.name || 'Cours'}] ${course.title}`,
+            summary: summary,
             start: { dateTime: course.start_time },
             end: { dateTime: course.end_time || course.start_time }
           })
@@ -130,20 +166,34 @@ export async function syncAllEventsToGoogle() {
 
     if (assignments) {
       for (const assign of assignments) {
+        const summary = `[Rendu] ${assign.classes?.name || '?'} - ${assign.title}`;
+        
+        // On évite les doublons !
+        if (isAlreadySynced(summary, assign.due_date)) {
+          continue; 
+        }
+
+        const endDate = new Date(assign.due_date);
+        endDate.setDate(endDate.getDate() + 1); // Google Calendar "all-day" end is exclusive
+        const dateString = new Date(assign.due_date).toISOString().split('T')[0];
+        const endDateString = endDate.toISOString().split('T')[0];
+
         await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            summary: `[Rendu] ${assign.classes?.name || '?'} - ${assign.title}`,
-            start: { dateTime: assign.due_date },
-            end: { dateTime: assign.due_date }
+            summary: summary,
+            start: { date: dateString },
+            end: { date: endDateString }
           })
         });
         count++;
       }
     }
 
-    alert(`Succès ! ${count} événements ont été synchronisés vers le calendrier ClassPilot.`);
+    alert(count === 0 
+      ? "Tout est déjà à jour ! Aucun nouvel événement à synchroniser." 
+      : `Succès ! ${count} nouveaux événements ont été synchronisés.`);
     return true;
   } catch (err) {
     console.error(err);

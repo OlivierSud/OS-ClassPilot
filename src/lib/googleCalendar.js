@@ -151,3 +151,31 @@ export async function syncAllEventsToGoogle() {
     return false;
   }
 }
+
+// 4. Supprimer le calendrier ClassPilot
+export async function deleteClassPilotCalendar() {
+  const token = await getGoogleToken();
+  if (!token) return { error: "Non connecté à Google" };
+
+  try {
+    const listRes = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!listRes.ok) throw new Error("Impossible de lister les calendriers.");
+    const data = await listRes.json();
+    const existingCal = data.items?.find(cal => cal.summary === "ClassPilot");
+
+    if (existingCal) {
+      await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(existingCal.id)}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      return { success: true };
+    }
+    return { success: true, message: "Le calendrier n'existait pas." };
+  } catch (err) {
+    console.error(err);
+    return { error: err.message };
+  }
+}

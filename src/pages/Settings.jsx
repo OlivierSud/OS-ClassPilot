@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
 import { usePWA } from '../context/PWAContext';
 import { useUserPreferences } from '../hooks/useData';
-import { syncAllEventsToGoogle } from '../lib/googleCalendar';
+import { syncAllEventsToGoogle, deleteClassPilotCalendar } from '../lib/googleCalendar';
 import { useNotifications } from '../hooks/useNotifications';
 
 const Settings = () => {
@@ -24,7 +24,7 @@ const Settings = () => {
       if (user?.identities) {
         const googleId = user.identities.find(id => id.provider === 'google');
         if (googleId) {
-          setGoogleIdentity(googleId.identity_data);
+          setGoogleIdentity(googleId);
         }
       }
     }
@@ -58,6 +58,27 @@ const Settings = () => {
       alert("Erreur de connexion Google : " + error.message);
     } else {
       alert("Redirection en cours vers Google...");
+    }
+  };
+
+  const handleDisconnectGoogle = async () => {
+    if (!googleIdentity) return;
+    if (!confirm("Voulez-vous vraiment supprimer l'agenda 'ClassPilot' de votre compte Google, annuler la synchronisation, et déconnecter votre compte Google de l'application ?")) return;
+
+    try {
+      // 1. Supprimer le calendrier Google
+      await deleteClassPilotCalendar();
+
+      // 2. Déconnecter l'identité Google de Supabase
+      const { error } = await supabase.auth.unlinkIdentity(googleIdentity);
+      
+      if (error) throw error;
+
+      setGoogleIdentity(null);
+      localStorage.removeItem('google_provider_token');
+      alert("Compte Google déconnecté et calendrier supprimé avec succès !");
+    } catch (err) {
+      alert("Erreur lors de la déconnexion : " + err.message);
     }
   };
 
@@ -299,34 +320,49 @@ const Settings = () => {
       <SettingItem 
         icon={Calendar} 
         label="Connecté à Google" 
-        value={googleIdentity ? googleIdentity.email : "Associer le compte"}
+        value={googleIdentity ? googleIdentity.identity_data.email : "Associer le compte"}
         color={googleIdentity ? "var(--success)" : "var(--primary)"} 
-        onClick={handleConnectGoogle}
+        onClick={googleIdentity ? null : handleConnectGoogle}
         isDark={isDarkMode}
       >
-        {googleIdentity?.avatar_url && (
+        {googleIdentity?.identity_data?.avatar_url && (
           <img 
-            src={googleIdentity.avatar_url} 
+            src={googleIdentity.identity_data.avatar_url} 
             alt="Google" 
-            className="w-8 h-8 rounded-full border-2 border-slate-100 shadow-sm"
+            className="w-5 h-5 rounded-full border border-slate-100 shadow-sm"
             style={{ pointerEvents: 'none' }}
           />
         )}
       </SettingItem>
 
-      <SettingItem 
-        icon={Clock} 
-        label="Synchroniser tout l'agenda" 
-        value="Pousse tous les cours vers Google"
-        color="var(--success)" 
-        onClick={async () => {
-          const success = await syncAllEventsToGoogle();
-          if (success) {
-            // Optional local UI refresh if needed
-          }
-        }}
-        isDark={isDarkMode}
-      />
+      {googleIdentity && (
+        <>
+          <SettingItem 
+            icon={Clock} 
+            label="Synchroniser tout l'agenda" 
+            value="Pousse tous les cours vers Google"
+            color="var(--success)" 
+            onClick={async () => {
+              const success = await syncAllEventsToGoogle();
+              if (success) {
+                // Optionnel
+              }
+            }}
+            isDark={isDarkMode}
+          />
+          
+          <SettingItem 
+            icon={Trash2} 
+            label="Supprimer & Déconnecter Google" 
+            value="Action irréversible sur votre agenda"
+            color="var(--error)" 
+            onClick={handleDisconnectGoogle}
+            isDark={isDarkMode}
+          />
+        </>
+      )}
+
+      {/* Synchroniser tout l'agenda n'apparait pas si pas connecté (fait par le wrapper au-dessus) */}
 
       <SettingItem 
         icon={LogOut} 

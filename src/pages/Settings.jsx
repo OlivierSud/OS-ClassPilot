@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { LogOut, Sun, Moon, Bell, ChevronRight, Download, Clock, Calendar, Trash2, Smartphone, Loader2, Shield, FileText } from 'lucide-react';
+import { LogOut, Sun, Moon, Bell, ChevronRight, Download, Clock, Calendar, Trash2, Smartphone, Loader2, Shield, FileText, Folder, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
 import { usePWA } from '../context/PWAContext';
 import { useUserPreferences } from '../hooks/useData';
-import { syncAllEventsToGoogle, deleteClassPilotCalendar } from '../lib/googleCalendar';
+import { syncAllEventsToGoogle, deleteClassPilotCalendar, listGoogleDriveFolders, getFolderNameById } from '../lib/googleCalendar';
+import Modal from '../components/Modal';
 import { useNotifications } from '../hooks/useNotifications';
 
 const Settings = () => {
@@ -19,6 +20,12 @@ const Settings = () => {
   const [showDebug, setShowDebug] = useState(false);
   const [googleIdentity, setGoogleIdentity] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [blenderFolderName, setBlenderFolderName] = useState('Chargement...');
+  const [isFolderPickerOpen, setIsFolderPickerOpen] = useState(false);
+  const [currentFolderId, setCurrentFolderId] = useState('root');
+  const [folderHistory, setFolderHistory] = useState(['root']);
+  const [driveFolders, setDriveFolders] = useState([]);
+  const [loadingFolders, setLoadingFolders] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,6 +42,51 @@ const Settings = () => {
   }, []);
 
   useEffect(() => {
+    async function getFolderName() {
+      if (preferences?.blender_folder_id) {
+        const name = await getFolderNameById(preferences.blender_folder_id);
+        setBlenderFolderName(name);
+      } else {
+        setBlenderFolderName("Non configuré (Default)");
+      }
+    }
+    getFolderName();
+  }, [preferences?.blender_folder_id]);
+
+  useEffect(() => {
+    if (isFolderPickerOpen) {
+      loadDriveFolders(currentFolderId);
+    }
+  }, [isFolderPickerOpen, currentFolderId]);
+
+  const loadDriveFolders = async (id) => {
+    setLoadingFolders(true);
+    const { data, error } = await listGoogleDriveFolders(id);
+    if (!error) {
+      setDriveFolders(data);
+    }
+    setLoadingFolders(false);
+  };
+
+  const traverseToFolder = (id) => {
+    setFolderHistory(prev => [...prev, id]);
+    setCurrentFolderId(id);
+  };
+
+  const goBackFolder = () => {
+    if (folderHistory.length <= 1) return;
+    const newHistory = [...folderHistory];
+    newHistory.pop();
+    setFolderHistory(newHistory);
+    setCurrentFolderId(newHistory[newHistory.length - 1]);
+  };
+
+  const selectFolder = async (id) => {
+    await updatePreferences({ blender_folder_id: id });
+    setIsFolderPickerOpen(false);
+  };
+
+  useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
       localStorage.setItem('theme', 'dark');
@@ -49,7 +101,7 @@ const Settings = () => {
       provider: 'google',
       options: {
         redirectTo: window.location.origin + window.location.pathname,
-        scopes: 'https://www.googleapis.com/auth/calendar',
+        scopes: 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/drive.metadata.readonly https://www.googleapis.com/auth/drive.readonly',
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
@@ -320,25 +372,34 @@ const Settings = () => {
 
       <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 mt-8 ml-4">Compte Google pour calendrier</div>
       
-      <SettingItem 
-        icon={Calendar} 
-        label="Connecté à Google" 
-        value={googleIdentity ? googleIdentity.identity_data.email : "Associer le compte"}
-        color={googleIdentity ? "var(--success)" : "var(--primary)"} 
-        onClick={googleIdentity ? null : handleConnectGoogle}
-        isDark={isDarkMode}
-      >
-        {googleIdentity?.identity_data?.avatar_url && (
-          <img 
-            src={googleIdentity.identity_data.avatar_url} 
-            alt="Google" 
-            className="w-4 h-4 rounded-full border border-slate-100 shadow-sm"
-            style={{ pointerEvents: 'none' }}
-          />
-        )}
-      </SettingItem>
-
       <div style={{ opacity: googleIdentity ? 1 : 0.4, pointerEvents: googleIdentity ? 'auto' : 'none', transition: 'all 0.3s ease' }}>
+        <SettingItem 
+          icon={Folder} 
+          label="Dossier Blender (Drive)" 
+          value={blenderFolderName}
+          color="var(--accent)" 
+          onClick={() => setIsFolderPickerOpen(googleIdentity !== null)}
+          isDark={isDarkMode}
+        />
+
+        <SettingItem 
+          icon={Calendar} 
+          label="Connecté à Google" 
+          value={googleIdentity ? googleIdentity.identity_data.email : "Associer le compte"}
+          color={googleIdentity ? "var(--success)" : "var(--primary)"} 
+          onClick={googleIdentity ? null : handleConnectGoogle}
+          isDark={isDarkMode}
+        >
+          {googleIdentity?.identity_data?.avatar_url && (
+            <img 
+              src={googleIdentity.identity_data.avatar_url} 
+              alt="Google" 
+              className="w-4 h-4 rounded-full border border-slate-100 shadow-sm"
+              style={{ pointerEvents: 'none' }}
+            />
+          )}
+        </SettingItem>
+
         <SettingItem 
           icon={isSyncing ? function SpinLoader(props) {
             return <Loader2 {...props} style={{ animation: 'spin 1s linear infinite' }} />;
@@ -382,6 +443,83 @@ const Settings = () => {
         onClick={handleDeleteAccount}
         isDark={isDarkMode}
       />
+
+      <Modal 
+        isOpen={isFolderPickerOpen} 
+        onClose={() => setIsFolderPickerOpen(false)}
+        title="Choisir le dossier Blender"
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-3 mb-2">
+            {folderHistory.length > 1 && (
+              <button 
+                onClick={goBackFolder}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+                title="Retour"
+              >
+                <ArrowLeft size={18} />
+              </button>
+            )}
+            <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">
+              {currentFolderId === 'root' ? 'Mon Drive' : 'Sous-dossier'}
+            </p>
+          </div>
+
+          <div className="max-h-[300px] overflow-y-auto flex flex-col gap-2 custom-scrollbar">
+            {loadingFolders ? (
+              <div className="flex flex-col items-center py-10 gap-3">
+                <Loader2 className="animate-spin text-primary" size={32} />
+                <p className="text-sm text-slate-400 font-medium tracking-tight">Exploration de votre Drive...</p>
+              </div>
+            ) : driveFolders.length === 0 ? (
+              <div className="text-center py-10">
+                <p className="text-sm text-slate-400 font-medium">Aucun dossier trouvé ici.</p>
+              </div>
+            ) : (
+              driveFolders.map(folder => (
+                <div 
+                  key={folder.id}
+                  className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-primary/30 transition-all group"
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="p-2 bg-primary/10 rounded-xl text-primary">
+                      <Folder size={18} />
+                    </div>
+                    <span className="font-bold text-slate-700 dark:text-slate-200 truncate">{folder.name}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => traverseToFolder(folder.id)}
+                      className="text-[11px] font-black uppercase text-slate-400 hover:text-primary transition-colors px-2 py-1"
+                    >
+                      Ouvrir
+                    </button>
+                    <button 
+                      onClick={() => selectFolder(folder.id)}
+                      className="text-[11px] font-black uppercase bg-primary text-white px-3 py-1.5 rounded-lg shadow-sm hover:shadow-md transition-all active:scale-95"
+                    >
+                      Choisir
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {currentFolderId !== 'root' && (
+            <button 
+              onClick={() => selectFolder(currentFolderId)}
+              className="w-full mt-2 p-4 bg-slate-800 text-white rounded-2xl font-bold shadow-lg hover:bg-slate-900 transition-all flex items-center justify-center gap-2"
+            >
+              Sélectionner le dossier actuel
+            </button>
+          )}
+
+          <p className="text-[10px] text-center text-slate-400 font-medium leading-relaxed mt-2">
+            Astuce : Sélectionnez le dossier racine qui contient vos pdf et dossiers de cours (Années, Tips, etc.)
+          </p>
+        </div>
+      </Modal>
 
       <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 mt-8 ml-4">Légal</div>
 

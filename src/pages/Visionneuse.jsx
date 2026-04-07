@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useUserPreferences } from '../hooks/useData';
+import { getGoogleToken } from '../lib/googleCalendar';
 import './Visionneuse.css';
 
 const DRIVE_CONFIG = {
@@ -7,6 +9,7 @@ const DRIVE_CONFIG = {
 };
 
 const Visionneuse = () => {
+  const { preferences, loading: prefsLoading } = useUserPreferences();
   const [data, setData] = useState({ courses: [], tips: [] });
   const [loading, setLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -53,9 +56,15 @@ const Visionneuse = () => {
 
   // Helper: Fetch folder contents (Non-recursive)
   const getFolderContents = useCallback(async (folderId) => {
+    const token = await getGoogleToken();
     const apiKey = DRIVE_CONFIG.apiKey;
-    const url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&fields=files(id,name,mimeType,webContentLink)&key=${apiKey}`;
-    const response = await fetch(url);
+    
+    // Si on a un token, on l'utilise pour accéder aux fichiers privés de l'utilisateur
+    // Sinon on retombe sur l'API Key pour le dossier par défaut
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+    const url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&fields=files(id,name,mimeType,webContentLink)${token ? '' : `&key=${apiKey}`}`;
+    
+    const response = await fetch(url, { headers });
     if (!response.ok) throw new Error("Failed to fetch folder");
     const resData = await response.json();
 
@@ -122,7 +131,8 @@ const Visionneuse = () => {
 
   const fetchInitialData = useCallback(async () => {
     try {
-      const rootContents = await getFolderContents(DRIVE_CONFIG.folderId);
+      const activeFolderId = preferences?.blender_folder_id || DRIVE_CONFIG.folderId;
+      const rootContents = await getFolderContents(activeFolderId);
       
       // Séparation des données
       let initialCourses = [];
@@ -190,11 +200,13 @@ const Visionneuse = () => {
       console.error("Initial fetch error:", err);
       setLoading(false);
     }
-  }, [getFolderContents]);
+  }, [getFolderContents, preferences?.blender_folder_id]);
 
   useEffect(() => {
-    fetchInitialData();
-  }, [fetchInitialData]);
+    if (!prefsLoading) {
+      fetchInitialData();
+    }
+  }, [fetchInitialData, prefsLoading]);
 
   // Sync des refs de navigation (mis à jour à chaque render, pas de useEffect)
   pageNumRef.current = pageNum;
@@ -272,15 +284,31 @@ const Visionneuse = () => {
           let pdfUrl = selectedFile.path;
           if (pdfUrl.includes('drive.google.com') && pdfUrl.includes('/preview')) {
             const fileId = pdfUrl.split('/d/')[1].split('/')[0];
-            pdfUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${DRIVE_CONFIG.apiKey}`;
+            const token = await getGoogleToken();
+            pdfUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media${token ? '' : `&key=${DRIVE_CONFIG.apiKey}`}`;
+            
+            // Si on utilise un token, on ne peut pas juste mettre l'URL dans getDocument
+            // Il faut passer les headers ou fetcher le blob
+            const docInit = token 
+              ? { url: pdfUrl, httpHeaders: { 'Authorization': `Bearer ${token}` } }
+              : pdfUrl;
+              
+            const loadingTask = window.pdfjsLib.getDocument(docInit);
+            const doc = await loadingTask.promise;
+            if (!active) return;
+            setPdfDoc(doc);
+            setPageCount(doc.numPages);
+            setPageNum(1);
+            setTimeout(() => renderPage(1, doc), 50);
+            return;
           }
+          
           const loadingTask = window.pdfjsLib.getDocument(pdfUrl);
           const doc = await loadingTask.promise;
           if (!active) return;
           setPdfDoc(doc);
           setPageCount(doc.numPages);
           setPageNum(1);
-          // Small delay so the canvas is mounted
           setTimeout(() => renderPage(1, doc), 50);
         } catch (err) {
           if (active) console.error("PDF.js Load Error:", err);

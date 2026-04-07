@@ -277,3 +277,46 @@ export async function deleteClassPilotCalendar() {
     return { error: err.message };
   }
 }
+
+// 5. Google Drive Folder Picker Helpers
+export async function listGoogleDriveFolders(parentId = 'root') {
+  const token = await getGoogleToken();
+  if (!token) return { error: "Non connecté à Google" };
+
+  try {
+    const q = `'${parentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+    const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)&pageSize=1000`;
+    
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) throw new Error("Token expiré");
+      throw new Error(`Erreur Drive API: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return { data: data.files || [] };
+  } catch (err) {
+    console.error(err);
+    return { error: err.message };
+  }
+}
+
+export async function getFolderNameById(folderId) {
+  if (!folderId || folderId === 'root') return "Mon Drive (Racine)";
+  const token = await getGoogleToken();
+  if (!token) return "?";
+
+  try {
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${folderId}?fields=name`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) return "?";
+    const data = await res.json();
+    return data.name;
+  } catch {
+    return "?";
+  }
+}

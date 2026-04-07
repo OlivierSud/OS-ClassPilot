@@ -26,12 +26,17 @@ function App() {
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-
+      if (session?.provider_token) {
+        localStorage.setItem('google_provider_token', session.provider_token);
+      }
       setSession(session);
       setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.provider_token) {
+        localStorage.setItem('google_provider_token', session.provider_token);
+      }
       setSession(session);
       setLoading(false);
     });

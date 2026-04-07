@@ -4,9 +4,10 @@ import { supabase } from './supabase';
 export async function getGoogleToken() {
   const { data: { session } } = await supabase.auth.getSession();
   if (session?.provider_token) {
+    localStorage.setItem('google_provider_token', session.provider_token);
     return session.provider_token;
   }
-  return null;
+  return localStorage.getItem('google_provider_token');
 }
 
 export async function isGoogleConnected() {

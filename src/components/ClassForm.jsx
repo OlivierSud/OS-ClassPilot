@@ -11,12 +11,17 @@ const ClassForm = ({ onClose, onSuccess, initialData }) => {
   const [loading, setLoading] = useState(false);
 
   const colors = [
-    { name: 'Bleu', value: 'var(--grad-primary)' },
-    { name: 'Orange', value: 'var(--grad-secondary)' },
-    { name: 'Violet', value: 'var(--grad-accent)' },
-    { name: 'Rouge', value: 'var(--grad-error)' },
-    { name: 'Vert', value: 'linear-gradient(135deg, #10b981, #059669)' },
-    { name: 'Rose', value: 'linear-gradient(135deg, #ec4899, #db2777)' },
+    { name: 'Lavande', value: 'linear-gradient(135deg, #7986cb, #5c6bc0)' },
+    { name: 'Sauge', value: 'linear-gradient(135deg, #33b679, #2e7d32)' },
+    { name: 'Raisin', value: 'linear-gradient(135deg, #8e24aa, #6a1b9a)' },
+    { name: 'Rose', value: 'linear-gradient(135deg, #e67c73, #e53935)' },
+    { name: 'Banane', value: 'linear-gradient(135deg, #f6bf26, #f9a825)' },
+    { name: 'Mandarine', value: 'linear-gradient(135deg, #f4511e, #d84315)' },
+    { name: 'Paon', value: 'linear-gradient(135deg, #039be5, #0277bd)' },
+    { name: 'Graphite', value: 'linear-gradient(135deg, #616161, #424242)' },
+    { name: 'Myrtille', value: 'linear-gradient(135deg, #3f51b5, #283593)' },
+    { name: 'Basilic', value: 'linear-gradient(135deg, #0b8043, #1b5e20)' },
+    { name: 'Tomate', value: 'linear-gradient(135deg, #d50000, #b71c1c)' }
   ];
 
   const [saveStatus, setSaveStatus] = useState('idle'); // 'idle', 'saving', 'saved'

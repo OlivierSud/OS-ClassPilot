@@ -15,6 +15,34 @@ export async function isGoogleConnected() {
   return token !== null;
 }
 
+// Map app colors to Google Calendar color IDs
+export function getGoogleColorId(colorString) {
+  if (!colorString) return undefined;
+  const lower = colorString.toLowerCase();
+  
+  // Exact matches according to ClassForm
+  if (lower.includes('#7986cb')) return "1"; // Lavande
+  if (lower.includes('#33b679')) return "2"; // Sauge
+  if (lower.includes('#8e24aa')) return "3"; // Raisin
+  if (lower.includes('#e67c73')) return "4"; // Flamant Rose
+  if (lower.includes('#f6bf26')) return "5"; // Banane
+  if (lower.includes('#f4511e')) return "6"; // Mandarine
+  if (lower.includes('#039be5')) return "7"; // Paon
+  if (lower.includes('#616161')) return "8"; // Graphite
+  if (lower.includes('#3f51b5')) return "9"; // Myrtille
+  if (lower.includes('#0b8043')) return "10"; // Basilic
+  if (lower.includes('#d50000')) return "11"; // Tomate
+
+  // Legacy variables support
+  if (lower.includes('primary') || lower.includes('blue')) return "9";
+  if (lower.includes('secondary') || lower.includes('orange')) return "6";
+  if (lower.includes('accent') || lower.includes('purple')) return "3";
+  if (lower.includes('error') || lower.includes('red')) return "11";
+  if (lower.includes('success') || lower.includes('green')) return "10";
+  
+  return undefined;
+}
+
 // 1. Cherche ou crée le calendrier "ClassPilot"
 export async function getOrCreateCalendarId(token) {
   // Liste les calendriers
@@ -55,6 +83,11 @@ export async function syncEventToGoogleCalendar(eventDetails) {
       summary: eventDetails.title,
       description: eventDetails.description || "Ajouté depuis ClassPilot",
     };
+
+    const colorId = getGoogleColorId(eventDetails.color);
+    if (colorId) {
+      eventBody.colorId = colorId;
+    }
 
     if (eventDetails.isAllDay) {
       const endDate = new Date(eventDetails.start_time);
@@ -111,13 +144,13 @@ export async function syncAllEventsToGoogle() {
     // Récupérer les cours à venir
     const { data: courses } = await supabase
       .from('courses')
-      .select('title, start_time, end_time, type, classes(name)')
+      .select('title, start_time, end_time, type, classes(name, color)')
       .gte('start_time', now);
       
     // Récupérer les rendus à venir
     const { data: assignments } = await supabase
       .from('assignments')
-      .select('title, due_date, classes(name)')
+      .select('title, due_date, classes(name, color)')
       .eq('completed', false)
       .gte('due_date', now);
 
@@ -156,14 +189,19 @@ export async function syncAllEventsToGoogle() {
           continue; 
         }
 
+        const eventBody = {
+          summary: summary,
+          start: { dateTime: course.start_time },
+          end: { dateTime: course.end_time || course.start_time }
+        };
+
+        const colorId = getGoogleColorId(course.classes?.color);
+        if (colorId) eventBody.colorId = colorId;
+
         await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            summary: summary,
-            start: { dateTime: course.start_time },
-            end: { dateTime: course.end_time || course.start_time }
-          })
+          body: JSON.stringify(eventBody)
         });
         count++;
       }
@@ -183,14 +221,19 @@ export async function syncAllEventsToGoogle() {
         const dateString = new Date(assign.due_date).toISOString().split('T')[0];
         const endDateString = endDate.toISOString().split('T')[0];
 
+        const eventBody = {
+          summary: summary,
+          start: { date: dateString },
+          end: { date: endDateString }
+        };
+
+        const colorId = getGoogleColorId(assign.classes?.color || 'var(--grad-error)'); // Les rendus sont souvent rouges par défaut
+        if (colorId) eventBody.colorId = colorId;
+
         await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            summary: summary,
-            start: { date: dateString },
-            end: { date: endDateString }
-          })
+          body: JSON.stringify(eventBody)
         });
         count++;
       }

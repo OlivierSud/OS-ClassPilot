@@ -16,7 +16,7 @@ const AssignmentForm = ({ onClose, onSuccess, initialData }) => {
 
   useEffect(() => {
     async function fetchClasses() {
-      const { data } = await supabase.from('classes').select('id, name');
+      const { data } = await supabase.from('classes').select('id, name, color');
       if (data) {
         setClasses(data);
         if (data.length > 0 && !formData.class_id) {
@@ -54,12 +54,14 @@ const AssignmentForm = ({ onClose, onSuccess, initialData }) => {
 
     if (!error) {
       if (await isGoogleConnected()) {
-        const className = classes.find(c => c.id === formData.class_id)?.name || "?";
+        const classObj = classes.find(c => c.id === formData.class_id);
+        const className = classObj?.name || "?";
         await syncEventToGoogleCalendar({
           title: `[Rendu] ${className} - ${formData.title}`,
           description: formData.description,
           start_time: new Date(dataToSave.due_date).toISOString(),
-          isAllDay: true
+          isAllDay: true,
+          color: classObj?.color || 'var(--grad-error)'
         });
       }
 

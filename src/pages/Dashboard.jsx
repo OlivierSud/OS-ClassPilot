@@ -142,7 +142,11 @@ const Dashboard = () => {
       <Modal 
         isOpen={!!detailItem} 
         onClose={() => setDetailItem(null)}
-        title={detailItem?.end_time ? "Détails du cours" : "Détails du rendu"}
+        title={
+          detailItem?.type === 'conseil_de_classe' ? 'Détails du conseil' : 
+          detailItem?.end_time ? 'Détails du cours' : 
+          'Détails du rendu'
+        }
       >
         {detailItem && (
           <div className="flex flex-col gap-6">

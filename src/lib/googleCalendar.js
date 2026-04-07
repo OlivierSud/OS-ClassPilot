@@ -111,7 +111,7 @@ export async function syncAllEventsToGoogle() {
     // Récupérer les cours à venir
     const { data: courses } = await supabase
       .from('courses')
-      .select('title, start_time, end_time, classes(name)')
+      .select('title, start_time, end_time, type, classes(name)')
       .gte('start_time', now);
       
     // Récupérer les rendus à venir
@@ -144,7 +144,12 @@ export async function syncAllEventsToGoogle() {
 
     if (courses) {
       for (const course of courses) {
-        const summary = `[${course.classes?.name || 'Cours'}] ${course.title}`;
+        let summary;
+        if (course.type === 'conseil_de_classe') {
+          summary = `[Conseil] ${course.classes?.name || '?'} - ${course.title}`;
+        } else {
+          summary = `[${course.classes?.name || 'Cours'}] ${course.title}`;
+        }
         
         // On évite les doublons !
         if (isAlreadySynced(summary, course.start_time)) {

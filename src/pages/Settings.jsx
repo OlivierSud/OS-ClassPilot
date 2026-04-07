@@ -26,6 +26,25 @@ const Settings = () => {
     }
   }, [isDarkMode]);
 
+  const handleConnectGoogle = async () => {
+    const { error } = await supabase.auth.linkIdentity({
+      provider: 'google',
+      options: {
+        scopes: 'https://www.googleapis.com/auth/calendar.events',
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        }
+      }
+    });
+    
+    if (error) {
+      alert("Erreur de connexion Google : " + error.message);
+    } else {
+      alert("Redirection en cours vers Google...");
+    }
+  };
+
   const handleLogout = async () => {
     if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
       await supabase.auth.signOut();
@@ -260,6 +279,16 @@ const Settings = () => {
       />
 
       <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 mt-8 ml-4">Compte</div>
+      
+      <SettingItem 
+        icon={Calendar} 
+        label="Connecter à Google" 
+        value="Synchroniser avec Google Calendar"
+        color="var(--success)" 
+        onClick={handleConnectGoogle}
+        isDark={isDarkMode}
+      />
+
       <SettingItem 
         icon={LogOut} 
         label="Déconnexion" 

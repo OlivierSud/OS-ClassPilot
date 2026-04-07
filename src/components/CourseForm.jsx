@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { format } from 'date-fns';
+import { syncEventToGoogleCalendar, isGoogleConnected } from '../lib/googleCalendar';
 
 const CourseForm = ({ onClose, onSuccess, initialData }) => {
   const [classes, setClasses] = useState([]);
@@ -56,6 +57,14 @@ const CourseForm = ({ onClose, onSuccess, initialData }) => {
         .insert([payload]);
 
     if (!error) {
+      if (await isGoogleConnected()) {
+        await syncEventToGoogleCalendar({
+          title: formData.title,
+          start_time: payload.start_time,
+          end_time: payload.end_time
+        });
+      }
+      
       if (onSuccess) onSuccess();
       onClose();
     } else {

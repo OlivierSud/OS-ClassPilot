@@ -230,7 +230,12 @@ const Visionneuse = () => {
       const viewport = page.getViewport({ scale: 2 });
       const wrapperWidth = canvas.parentElement.clientWidth - 20;
       const displayScale = wrapperWidth / viewport.width;
-      const finalViewport = page.getViewport({ scale: displayScale * 2 });
+      
+      // On augmente fortement la résolution du canevas pour qu'il reste net au zoom
+      // Facteur x3 ou x4 selon le devicePixelRatio pour garantir la lisibilité du texte
+      const pixelRatio = window.devicePixelRatio || 1;
+      const renderScale = displayScale * pixelRatio * 3;
+      const finalViewport = page.getViewport({ scale: renderScale });
 
       canvas.height = finalViewport.height;
       canvas.width = finalViewport.width;

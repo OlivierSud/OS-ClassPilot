@@ -371,6 +371,24 @@ const Settings = () => {
       />
 
       <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 mt-8 ml-4">Compte Google pour calendrier</div>
+
+      <SettingItem 
+        icon={Calendar} 
+        label="Connecté à Google" 
+        value={googleIdentity ? googleIdentity.identity_data.email : "Associer le compte"}
+        color={googleIdentity ? "var(--success)" : "var(--primary)"} 
+        onClick={googleIdentity ? null : handleConnectGoogle}
+        isDark={isDarkMode}
+      >
+        {googleIdentity?.identity_data?.avatar_url && (
+          <img 
+            src={googleIdentity.identity_data.avatar_url} 
+            alt="Google" 
+            className="w-4 h-4 rounded-full border border-slate-100 shadow-sm"
+            style={{ pointerEvents: 'none' }}
+          />
+        )}
+      </SettingItem>
       
       <div style={{ opacity: googleIdentity ? 1 : 0.4, pointerEvents: googleIdentity ? 'auto' : 'none', transition: 'all 0.3s ease' }}>
         <SettingItem 
@@ -378,27 +396,9 @@ const Settings = () => {
           label="Dossier Blender (Drive)" 
           value={blenderFolderName}
           color="var(--accent)" 
-          onClick={() => setIsFolderPickerOpen(googleIdentity !== null)}
+          onClick={() => setIsFolderPickerOpen(true)}
           isDark={isDarkMode}
         />
-
-        <SettingItem 
-          icon={Calendar} 
-          label="Connecté à Google" 
-          value={googleIdentity ? googleIdentity.identity_data.email : "Associer le compte"}
-          color={googleIdentity ? "var(--success)" : "var(--primary)"} 
-          onClick={googleIdentity ? null : handleConnectGoogle}
-          isDark={isDarkMode}
-        >
-          {googleIdentity?.identity_data?.avatar_url && (
-            <img 
-              src={googleIdentity.identity_data.avatar_url} 
-              alt="Google" 
-              className="w-4 h-4 rounded-full border border-slate-100 shadow-sm"
-              style={{ pointerEvents: 'none' }}
-            />
-          )}
-        </SettingItem>
 
         <SettingItem 
           icon={isSyncing ? function SpinLoader(props) {

@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
 import { usePWA } from '../context/PWAContext';
 import { useUserPreferences } from '../hooks/useData';
+import { syncAllEventsToGoogle } from '../lib/googleCalendar';
 import { useNotifications } from '../hooks/useNotifications';
 
 const Settings = () => {
@@ -15,6 +16,20 @@ const Settings = () => {
            localStorage.getItem('theme') === 'dark';
   });
   const [showDebug, setShowDebug] = useState(false);
+  const [googleIdentity, setGoogleIdentity] = useState(null);
+
+  useEffect(() => {
+    async function fetchIdentities() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.identities) {
+        const googleId = user.identities.find(id => id.provider === 'google');
+        if (googleId) {
+          setGoogleIdentity(googleId.identity_data);
+        }
+      }
+    }
+    fetchIdentities();
+  }, []);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -283,10 +298,33 @@ const Settings = () => {
       
       <SettingItem 
         icon={Calendar} 
-        label="Connecter à Google" 
-        value="Synchroniser avec Google Calendar"
-        color="var(--success)" 
+        label="Connecté à Google" 
+        value={googleIdentity ? googleIdentity.email : "Associer le compte"}
+        color={googleIdentity ? "var(--success)" : "var(--primary)"} 
         onClick={handleConnectGoogle}
+        isDark={isDarkMode}
+      >
+        {googleIdentity?.avatar_url && (
+          <img 
+            src={googleIdentity.avatar_url} 
+            alt="Google" 
+            className="w-8 h-8 rounded-full border-2 border-slate-100 shadow-sm"
+            style={{ pointerEvents: 'none' }}
+          />
+        )}
+      </SettingItem>
+
+      <SettingItem 
+        icon={Clock} 
+        label="Synchroniser tout l'agenda" 
+        value="Pousse tous les cours vers Google"
+        color="var(--success)" 
+        onClick={async () => {
+          const success = await syncAllEventsToGoogle();
+          if (success) {
+            // Optional local UI refresh if needed
+          }
+        }}
         isDark={isDarkMode}
       />
 

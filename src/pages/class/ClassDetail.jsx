@@ -18,6 +18,10 @@ const ClassDetail = () => {
   const [newCourse, setNewCourse] = useState({ title: '', date: '', start_time: '', end_time: '' });
   const [editingCourse, setEditingCourse] = useState(null);
 
+  const [isAddingCouncil, setIsAddingCouncil] = useState(false);
+  const [newCouncil, setNewCouncil] = useState({ title: '', date: '', start_time: '', end_time: '' });
+  const [editingCouncil, setEditingCouncil] = useState(null);
+
   const calculateAndUpdateProgress = async (items) => {
     if (!items || items.length === 0) return;
     const completedCount = items.filter(i => i.completed).length;
@@ -165,6 +169,53 @@ const ClassDetail = () => {
     window.location.reload();
   };
 
+  const handleAddCouncil = async (e) => {
+    e.preventDefault();
+    if (!newCouncil.title.trim() || !newCouncil.date || !newCouncil.start_time || !newCouncil.end_time) return;
+
+    const startDateTime = new Date(`${newCouncil.date}T${newCouncil.start_time}`).toISOString();
+    const endDateTime = new Date(`${newCouncil.date}T${newCouncil.end_time}`).toISOString();
+
+    const { error } = await supabase
+      .from('courses')
+      .insert([{
+        class_id: id,
+        title: newCouncil.title,
+        start_time: startDateTime,
+        end_time: endDateTime,
+        type: 'conseil_de_classe'
+      }]);
+
+    if (!error) {
+      setNewCouncil({ title: '', date: '', start_time: '', end_time: '' });
+      setIsAddingCouncil(false);
+      window.location.reload();
+    }
+  };
+
+  const handleStartEditCouncil = (e, council) => {
+    e.stopPropagation();
+    const start = new Date(council.start_time);
+    const end = new Date(council.end_time);
+    setEditingCouncil({
+      id: council.id,
+      title: council.title,
+      date: start.toISOString().slice(0, 10),
+      start_time: start.toTimeString().slice(0, 5),
+      end_time: end.toTimeString().slice(0, 5)
+    });
+  };
+
+  const handleSaveEditCouncil = async (e) => {
+    e.preventDefault();
+    if (!editingCouncil.title.trim() || !editingCouncil.date || !editingCouncil.start_time || !editingCouncil.end_time) return;
+    const startDT = new Date(`${editingCouncil.date}T${editingCouncil.start_time}`).toISOString();
+    const endDT = new Date(`${editingCouncil.date}T${editingCouncil.end_time}`).toISOString();
+    await supabase.from('courses').update({ title: editingCouncil.title, start_time: startDT, end_time: endDT }).eq('id', editingCouncil.id);
+    setEditingCouncil(null);
+    window.location.reload();
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[200px]">
@@ -187,6 +238,9 @@ const ClassDetail = () => {
   }
 
   const { name, progress, program_items = [], assignments = [], courses = [] } = classData;
+
+  const actualCourses = courses.filter(c => c.type === 'course' || !c.type);
+  const classCouncils = courses.filter(c => c.type === 'conseil_de_classe');
 
   return (
     <div className="page-container">
@@ -350,7 +404,7 @@ const ClassDetail = () => {
               </div>
             </form>
           )}
-          {courses.length > 0 ? [...courses]
+          {actualCourses.length > 0 ? [...actualCourses]
             .sort((a,b) => new Date(a.start_time) - new Date(b.start_time))
             .map((course, index) => {
               const start = new Date(course.start_time);
@@ -362,7 +416,7 @@ const ClassDetail = () => {
               const isPassed = end < new Date();
 
               return (
-                <div key={course.id} style={{ borderBottom: index === courses.length - 1 ? 'none' : '1px solid #f1f5f9', opacity: isPassed ? 0.6 : 1, filter: isPassed ? 'grayscale(0.8)' : 'none' }}>
+                <div key={course.id} style={{ borderBottom: index === actualCourses.length - 1 ? 'none' : '1px solid #f1f5f9', opacity: isPassed ? 0.6 : 1, filter: isPassed ? 'grayscale(0.8)' : 'none' }}>
                   {editingCourse && editingCourse.id === course.id ? (
                     <form onSubmit={handleSaveEditCourse} style={{ padding: '16px', background: 'rgba(248,250,252,0.5)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -416,6 +470,149 @@ const ClassDetail = () => {
               );
             }) : !isAddingCourse && (
             <p className="p-8 text-center text-sm text-slate-400 italic">Aucun cours planifié</p>
+          )}
+        </div>
+      </section>
+
+      {/* === CONSEILS DE CLASSE === */}
+      <section className="mb-8">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Conseils de classe</h2>
+          {!isAddingCouncil && (
+            <button onClick={() => setIsAddingCouncil(true)} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--primary)', fontWeight: 600, fontSize: '0.9rem', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px', borderRadius: '10px', background: 'var(--primary-light, rgba(99,102,241,0.08))' }}>
+              <Plus size={18} /> Ajouter
+            </button>
+          )}
+        </div>
+        <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
+          {isAddingCouncil && (
+            <form onSubmit={handleAddCouncil} style={{ padding: '20px', borderBottom: '1px solid #f1f5f9', background: 'rgba(248,250,252,0.5)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Intitulé du conseil</label>
+                <input 
+                  autoFocus
+                  type="text"
+                  value={newCouncil.title}
+                  onChange={(e) => setNewCouncil({...newCouncil, title: e.target.value})}
+                  placeholder="ex: Conseil du 1er trimestre"
+                  style={{ width: '100%', background: 'white', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '16px', fontSize: '1rem', outline: 'none' }}
+                />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Date</label>
+                <input 
+                  required
+                  type="date"
+                  value={newCouncil.date}
+                  onChange={(e) => setNewCouncil({...newCouncil, date: e.target.value})}
+                  style={{ width: '100%', background: 'white', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '16px', fontSize: '0.95rem', outline: 'none' }}
+                />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Heure début</label>
+                  <input 
+                    required
+                    type="time"
+                    value={newCouncil.start_time}
+                    onChange={(e) => setNewCouncil({...newCouncil, start_time: e.target.value})}
+                    style={{ width: '100%', background: 'white', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '16px', fontSize: '0.95rem', outline: 'none' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Heure fin</label>
+                  <input 
+                    required
+                    type="time"
+                    value={newCouncil.end_time}
+                    onChange={(e) => setNewCouncil({...newCouncil, end_time: e.target.value})}
+                    style={{ width: '100%', background: 'white', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '16px', fontSize: '0.95rem', outline: 'none' }}
+                  />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button 
+                  type="button"
+                  onClick={() => { setIsAddingCouncil(false); setNewCouncil({ title: '', date: '', start_time: '', end_time: '' }); }}
+                  style={{ flex: 1, background: '#f1f5f9', color: 'var(--text-secondary)', border: 'none', borderRadius: '14px', padding: '16px', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer' }}
+                >
+                  Annuler
+                </button>
+                <button 
+                  type="submit" 
+                  style={{ flex: 1, background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '14px', padding: '16px', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer' }}
+                >
+                  Ajouter
+                </button>
+              </div>
+            </form>
+          )}
+          {classCouncils.length > 0 ? [...classCouncils]
+            .sort((a,b) => new Date(a.start_time) - new Date(b.start_time))
+            .map((council, index) => {
+              const start = new Date(council.start_time);
+              const end = new Date(council.end_time);
+              const dateStr = start.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+              const startStr = start.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+              const endStr = end.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+              const isPassed = end < new Date();
+
+              return (
+                <div key={council.id} style={{ borderBottom: index === classCouncils.length - 1 ? 'none' : '1px solid #f1f5f9', opacity: isPassed ? 0.6 : 1, filter: isPassed ? 'grayscale(0.8)' : 'none' }}>
+                  {editingCouncil && editingCouncil.id === council.id ? (
+                    <form onSubmit={handleSaveEditCouncil} style={{ padding: '16px', background: 'rgba(248,250,252,0.5)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Intitulé</label>
+                        <input autoFocus type="text" value={editingCouncil.title} onChange={(e) => setEditingCouncil({...editingCouncil, title: e.target.value})} style={{ width: '100%', background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '14px', fontSize: '0.95rem', outline: 'none' }} />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Date</label>
+                        <input required type="date" value={editingCouncil.date} onChange={(e) => setEditingCouncil({...editingCouncil, date: e.target.value})} style={{ width: '100%', background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '14px', fontSize: '0.95rem', outline: 'none' }} />
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Début</label>
+                          <input required type="time" value={editingCouncil.start_time} onChange={(e) => setEditingCouncil({...editingCouncil, start_time: e.target.value})} style={{ width: '100%', background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '14px', fontSize: '0.95rem', outline: 'none' }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Fin</label>
+                          <input required type="time" value={editingCouncil.end_time} onChange={(e) => setEditingCouncil({...editingCouncil, end_time: e.target.value})} style={{ width: '100%', background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '14px', fontSize: '0.95rem', outline: 'none' }} />
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button type="button" onClick={() => setEditingCouncil(null)} style={{ flex: 1, background: '#f1f5f9', color: 'var(--text-secondary)', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer' }}>Annuler</button>
+                        <button type="submit" style={{ flex: 1, background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer' }}>Enregistrer</button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px' }}>
+                      <div style={{ flexShrink: 0, width: '36px', height: '36px', borderRadius: '10px', background: 'var(--primary-light, rgba(99,102,241,0.08))', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                        <Clock size={16} color="var(--primary)" />
+                        {isPassed && (
+                          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <X size={24} color="#ef4444" strokeWidth={3} style={{ opacity: 0.8 }} />
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{council.title}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                          {dateStr} · {startStr} – {endStr}
+                        </div>
+                      </div>
+                      <button onClick={(e) => handleStartEditCouncil(e, council)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--text-secondary)', opacity: 0.5, flexShrink: 0 }}>
+                        <Pencil size={14} />
+                      </button>
+                      <button onClick={(e) => handleDeleteCourse(e, council.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--error)', opacity: 0.4, flexShrink: 0 }}>
+                        <X size={16} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            }) : !isAddingCouncil && (
+            <p className="p-8 text-center text-sm text-slate-400 italic">Aucun conseil de classe planifié</p>
           )}
         </div>
       </section>

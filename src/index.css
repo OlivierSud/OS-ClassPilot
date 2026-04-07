@@ -548,3 +548,13 @@ a {
 .dark .bg-github { background-color: #020617; }
 .dark .bg-google-pdf { background-color: #1d4ed8; }
 
+/* Spin animation for loaders */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+

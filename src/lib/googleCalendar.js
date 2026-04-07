@@ -292,14 +292,17 @@ export async function listGoogleDriveFolders(parentId = 'root') {
     });
 
     if (!response.ok) {
-      if (response.status === 401) throw new Error("Token expiré");
-      throw new Error(`Erreur Drive API: ${response.status}`);
+      const errData = await response.json().catch(() => ({}));
+      const reason = errData.error?.message || response.status;
+      if (response.status === 401) throw new Error("Token expiré ou invalide. Essayez de vous reconnecter.");
+      if (response.status === 403) throw new Error(`Permission refusée (403): ${reason}. Vérifiez que 'Google Drive API' est bien activée dans la console Google Cloud et que vous avez coché les cases d'accès lors de la connexion.`);
+      throw new Error(`Erreur Drive API (${response.status}): ${reason}`);
     }
 
     const data = await response.json();
     return { data: data.files || [] };
   } catch (err) {
-    console.error(err);
+    console.error("DRIVE ERROR:", err);
     return { error: err.message };
   }
 }

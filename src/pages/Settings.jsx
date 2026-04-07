@@ -408,7 +408,7 @@ const Settings = () => {
 
         <SettingItem 
           icon={isSyncing ? function SpinLoader(props) {
-            return <Loader2 {...props} style={{ animation: 'spin 1s linear infinite' }} />;
+            return <Loader2 {...props} className="animate-spin" />;
           } : Clock} 
           label={isSyncing ? "Synchronisation en cours..." : "Synchroniser tout l'agenda"} 
           value={isSyncing ? "Veuillez patienter" : "Pousse tous les cours vers Google"}

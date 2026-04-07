@@ -62,7 +62,9 @@ const Settings = () => {
   const loadDriveFolders = async (id) => {
     setLoadingFolders(true);
     const { data, error } = await listGoogleDriveFolders(id);
-    if (!error) {
+    if (error) {
+      alert("Erreur Drive : " + error);
+    } else {
       setDriveFolders(data);
     }
     setLoadingFolders(false);
@@ -82,8 +84,12 @@ const Settings = () => {
   };
 
   const selectFolder = async (id) => {
-    await updatePreferences({ blender_folder_id: id });
-    setIsFolderPickerOpen(false);
+    const { error } = await updatePreferences({ blender_folder_id: id });
+    if (error) {
+      alert("Erreur lors de l'enregistrement : " + error.message + "\nAvez-vous bien exécuté la commande SQL sur Supabase ?");
+    } else {
+      setIsFolderPickerOpen(false);
+    }
   };
 
   useEffect(() => {

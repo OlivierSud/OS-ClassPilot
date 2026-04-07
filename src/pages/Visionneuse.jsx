@@ -58,14 +58,22 @@ const Visionneuse = () => {
   const getFolderContents = useCallback(async (folderId) => {
     const token = await getGoogleToken();
     const apiKey = DRIVE_CONFIG.apiKey;
+    const isDefault = folderId === DRIVE_CONFIG.folderId;
     
-    // Si on a un token, on l'utilise pour accéder aux fichiers privés de l'utilisateur
-    // Sinon on retombe sur l'API Key pour le dossier par défaut
-    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-    const url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&fields=files(id,name,mimeType,webContentLink)${token ? '' : `&key=${apiKey}`}`;
+    // Pour le dossier par défaut d'Olivier, on utilise systématiquement l'API Key (Public)
+    // Pour un dossier personnalisé de l'utilisateur, on utilise son Token OAuth
+    let url;
+    let headers = {};
+
+    if (isDefault || !token) {
+      url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&fields=files(id,name,mimeType,webContentLink)&key=${apiKey}`;
+    } else {
+      url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&fields=files(id,name,mimeType,webContentLink)`;
+      headers = { 'Authorization': `Bearer ${token}` };
+    }
     
     const response = await fetch(url, { headers });
-    if (!response.ok) throw new Error("Failed to fetch folder");
+    if (!response.ok) throw new Error("Failed to fetch folder: " + response.status);
     const resData = await response.json();
 
     return (resData.files || []).map(file => ({

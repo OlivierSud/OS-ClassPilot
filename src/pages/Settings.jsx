@@ -30,6 +30,7 @@ const Settings = () => {
     const { error } = await supabase.auth.linkIdentity({
       provider: 'google',
       options: {
+        redirectTo: window.location.origin + window.location.pathname,
         scopes: 'https://www.googleapis.com/auth/calendar.events',
         queryParams: {
           access_type: 'offline',

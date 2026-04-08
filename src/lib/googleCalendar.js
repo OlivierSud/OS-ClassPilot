@@ -3,16 +3,61 @@ import { supabase } from './supabase';
 // Récupère le token Google de la session courante
 export async function getGoogleToken() {
   const { data: { session } } = await supabase.auth.getSession();
+  
+  // 1. Priorité aux tokens de la session active (viennent d'être fournis par Supabase)
   if (session?.provider_token) {
     localStorage.setItem('google_provider_token', session.provider_token);
+    if (session.provider_refresh_token) {
+      localStorage.setItem('google_refresh_token', session.provider_refresh_token);
+    }
+    
+    // On tente de les sauvegarder aussi en DB pour la persistance multi-appareil/PWA
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('user_preferences').update({
+          google_access_token: session.provider_token,
+          google_refresh_token: session.provider_refresh_token
+        }).eq('user_id', user.id);
+      }
+    } catch (e) { console.error("Could not sync tokens to DB", e); }
+    
     return session.provider_token;
   }
-  return localStorage.getItem('google_provider_token');
+  
+  // 2. Fallback sur localStorage
+  let token = localStorage.getItem('google_provider_token');
+  
+  // 3. Si vide dans localStorage, on tente de récupérer depuis les préférences en DB
+  if (!token) {
+    try {
+      const { data: prefs } = await supabase.from('user_preferences').select('google_access_token').single();
+      if (prefs?.google_access_token) {
+        token = prefs.google_access_token;
+        localStorage.setItem('google_provider_token', token);
+      }
+    } catch (e) {}
+  }
+  
+  return token;
 }
 
 export async function isGoogleConnected() {
   const token = await getGoogleToken();
-  return token !== null;
+  if (!token) return false;
+  
+  // On pourrait faire un appel léger pour vérifier la validité
+  // return await checkTokenValidity(token);
+  return true;
+}
+
+export async function checkTokenValidity(token) {
+  try {
+    const res = await fetch('https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=' + token);
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 // Map app colors to Google Calendar color IDs

@@ -62,6 +62,7 @@ const Visionneuse = () => {
     
     // Si c'est le dossier par défaut ou qu'il n'y a pas de token, on utilise la clé publique (fetch standard)
     // Sinon on utilise notre wrapper d'authentification pour rafraîchir en cas de besoin
+    let url;
     let response;
     if (isDefault || !token) {
       url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&fields=files(id,name,mimeType,webContentLink)&key=${apiKey}`;
@@ -291,19 +292,23 @@ const Visionneuse = () => {
           if (pdfUrl.includes('drive.google.com') && pdfUrl.includes('/preview')) {
             const fileId = pdfUrl.split('/d/')[1].split('/')[0];
             const token = await getGoogleToken();
-            pdfUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media${token ? '' : `&key=${DRIVE_CONFIG.apiKey}`}`;
-            
-            // Pour éviter que PDF.js crash silencieusement sur une erreur 401, on fetch le fichier nous-même avec notre wrapper intelligent
-            let docInit;
+            // Pour éviter que PDF.js crash silencieusement si le token est expiré 
+            // on force la vérification (et le rafraîchissement) via notre wrapper
             if (token) {
-              const fileRes = await googleAuthFetch(pdfUrl, { headers: { 'Authorization': `Bearer ${token}` } });
-              if (!fileRes.ok) throw new Error("Erreur de récupération du fichier PDF : " + fileRes.status);
-              
-              const blob = await fileRes.blob();
-              docInit = URL.createObjectURL(blob);
-            } else {
-              docInit = pdfUrl;
+              try {
+                await googleAuthFetch(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=id`);
+              } catch (e) {
+                console.warn('Erreur lors du test du token', e);
+              }
             }
+            
+            // On récupère le token possiblement rafraîchi
+            const activeToken = await getGoogleToken();
+            pdfUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media${activeToken ? '' : `&key=${DRIVE_CONFIG.apiKey}`}`;
+            
+            const docInit = activeToken 
+              ? { url: pdfUrl, httpHeaders: { 'Authorization': `Bearer ${activeToken}` } }
+              : pdfUrl;
               
             const loadingTask = window.pdfjsLib.getDocument(docInit);
             const doc = await loadingTask.promise;

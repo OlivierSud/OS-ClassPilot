@@ -295,7 +295,7 @@ const Calendar = () => {
                       ? '0 4px 10px rgba(59, 130, 246, 0.2)' 
                       : '0 4px 10px rgba(239, 68, 68, 0.2)'
                   }}>
-                    {isCourse ? 'Cours' : 'Rendu'}
+                    {isCourse ? (event.type === 'conseil_de_classe' ? 'Conseil' : 'Cours') : 'Rendu'}
                   </span>
                 </div>
               );

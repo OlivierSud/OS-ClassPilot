@@ -343,3 +343,29 @@ export function useUserPreferences() {
 
   return { preferences, loading, updatePreferences };
 }
+
+export function useUpcomingCouncils() {
+  const [councils, setCouncils] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  async function fetchCouncils() {
+    setLoading(true);
+    const now = new Date().toISOString();
+    
+    const { data, error } = await supabase
+      .from('courses')
+      .select('*, classes(name, color)')
+      .eq('type', 'conseil_de_classe')
+      .gte('end_time', now)
+      .order('start_time', { ascending: true });
+    
+    if (!error) setCouncils(data || []);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    fetchCouncils();
+  }, []);
+
+  return { councils, loading, refresh: fetchCouncils };
+}

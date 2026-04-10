@@ -6,7 +6,7 @@ import AssignmentCard from '../components/AssignmentCard';
 import QuickAdd from '../components/QuickAdd';
 import Modal from '../components/Modal';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUpcomingCoursesPerClass, useUpcomingAssignments, useWeeklyCourses } from '../hooks/useData';
+import { useUpcomingCoursesPerClass, useUpcomingAssignments, useWeeklyCourses, useUpcomingCouncils } from '../hooks/useData';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
@@ -17,6 +17,7 @@ const Dashboard = () => {
   const { courses: schedule, loading: loadingSchedule, refresh: refreshUpcoming } = useUpcomingCoursesPerClass();
   const { courses: weeklyCourses, loading: loadingWeekly, refresh: refreshWeekly } = useWeeklyCourses();
   const { assignments, loading: loadingAssignments, refresh: refreshAssignments } = useUpcomingAssignments();
+  const { councils, loading: loadingCouncils, refresh: refreshCouncils } = useUpcomingCouncils();
   const [editItem, setEditItem] = useState(null);
 
   // Filter out courses that are already in the weekly section
@@ -45,6 +46,7 @@ const Dashboard = () => {
     refreshUpcoming();
     refreshWeekly();
     refreshAssignments();
+    refreshCouncils();
   };
 
   return (
@@ -65,7 +67,47 @@ const Dashboard = () => {
         </button>
       </header>
 
-      <section style={{ marginTop: '16px' }}>
+      {councils.length > 0 && (
+        <section style={{ marginTop: '16px' }}>
+          <h2 className="section-title" style={{ fontSize: '1rem', marginBottom: '12px' }}>
+            Prochains conseils de classe
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px' }}>
+            {councils.map(council => (
+              <div 
+                key={council.id}
+                onClick={() => handleInfoClick(council)}
+                style={{
+                  background: council.classes?.color || 'var(--grad-primary)',
+                  padding: '10px 12px',
+                  borderRadius: '12px',
+                  color: 'white',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px',
+                  boxShadow: 'var(--shadow-sm)'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <span style={{ fontWeight: 800, fontSize: '0.9rem', textTransform: 'uppercase', lineHeight: 1.1 }}>
+                    {council.classes?.name}
+                  </span>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, opacity: 0.9, textAlign: 'right', whiteSpace: 'nowrap', marginLeft: '4px' }}>
+                    {new Date(council.start_time).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.8rem', fontWeight: 600, opacity: 0.9 }}>
+                  {formatTime(council.start_time)}
+                  {council.room && <span style={{ marginLeft: '4px' }}>· {council.room}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section style={{ marginTop: '20px' }}>
         <h2 className="section-title" style={{ fontSize: '1.2rem', marginBottom: '16px' }}>
           Cours de la semaine
         </h2>

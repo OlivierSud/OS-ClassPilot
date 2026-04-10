@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useUserPreferences } from '../hooks/useData';
-import { getGoogleToken } from '../lib/googleCalendar';
+import { getGoogleToken, googleAuthFetch } from '../lib/googleCalendar';
 import './Visionneuse.css';
 
 const DRIVE_CONFIG = {
@@ -72,7 +72,8 @@ const Visionneuse = () => {
       headers = { 'Authorization': `Bearer ${token}` };
     }
     
-    const response = await fetch(url, { headers });
+    // googleAuthFetch effectuera le rafraîchissement au besoin si l'utilisateur est concerné
+    const response = await googleAuthFetch(url, { headers });
     if (!response.ok) throw new Error("Failed to fetch folder: " + response.status);
     const resData = await response.json();
 
@@ -295,11 +296,17 @@ const Visionneuse = () => {
             const token = await getGoogleToken();
             pdfUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media${token ? '' : `&key=${DRIVE_CONFIG.apiKey}`}`;
             
-            // Si on utilise un token, on ne peut pas juste mettre l'URL dans getDocument
-            // Il faut passer les headers ou fetcher le blob
-            const docInit = token 
-              ? { url: pdfUrl, httpHeaders: { 'Authorization': `Bearer ${token}` } }
-              : pdfUrl;
+            // Pour éviter que PDF.js crash silencieusement sur une erreur 401, on fetch le fichier nous-même avec notre wrapper intelligent
+            let docInit;
+            if (token) {
+              const fileRes = await googleAuthFetch(pdfUrl, { headers: { 'Authorization': `Bearer ${token}` } });
+              if (!fileRes.ok) throw new Error("Erreur de récupération du fichier PDF : " + fileRes.status);
+              
+              const blob = await fileRes.blob();
+              docInit = URL.createObjectURL(blob);
+            } else {
+              docInit = pdfUrl;
+            }
               
             const loadingTask = window.pdfjsLib.getDocument(docInit);
             const doc = await loadingTask.promise;

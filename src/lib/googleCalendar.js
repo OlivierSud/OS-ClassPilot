@@ -60,6 +60,38 @@ export async function checkTokenValidity(token) {
   }
 }
 
+// Wrapper intelligent pour les appels Google (gère le 401 et le refresh transparent via Edge Function)
+export async function googleAuthFetch(url, options = {}) {
+  let token = await getGoogleToken();
+  if (!token) return { response: null, error: "Non connecté à Google" };
+
+  options.headers = options.headers || {};
+  // Si le fetch passe déjà le token, on s'assure de l'utiliser ou le mettre à jour
+  if (!options.headers['Authorization']) {
+    options.headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  let response = await fetch(url, options);
+
+  if (response.status === 401) {
+    console.log("Token Google expiré (401), tentative de rafraîchissement transparent via serveur...");
+    const { data, error } = await supabase.functions.invoke('refresh-google-token');
+    
+    if (!error && data?.access_token) {
+      console.log("Token Google rafraîchi avec succès!");
+      localStorage.setItem('google_provider_token', data.access_token);
+      // Mettre à jour le header avec le nouveau token
+      options.headers['Authorization'] = `Bearer ${data.access_token}`;
+      // On réessaie la requête originale
+      response = await fetch(url, options);
+    } else {
+      console.warn("Le rafraîchissement a échoué. Veuillez vous reconnecter.");
+    }
+  }
+
+  return response;
+}
+
 // Map app colors to Google Calendar color IDs
 export function getGoogleColorId(colorString) {
   if (!colorString) return undefined;
@@ -91,7 +123,7 @@ export function getGoogleColorId(colorString) {
 // 1. Cherche ou crée le calendrier "ClassPilot"
 export async function getOrCreateCalendarId(token) {
   // Liste les calendriers
-  const listRes = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
+  const listRes = await googleAuthFetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
     headers: { 'Authorization': `Bearer ${token}` }
   });
   
@@ -102,7 +134,7 @@ export async function getOrCreateCalendarId(token) {
   if (existingCal) return existingCal.id;
 
   // S'il n'existe pas, on le crée
-  const createRes = await fetch('https://www.googleapis.com/calendar/v3/calendars', {
+  const createRes = await googleAuthFetch('https://www.googleapis.com/calendar/v3/calendars', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -150,7 +182,7 @@ export async function syncEventToGoogleCalendar(eventDetails) {
       };
     }
 
-    const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`, {
+    const response = await googleAuthFetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -200,7 +232,7 @@ export async function syncAllEventsToGoogle() {
       .gte('due_date', now);
 
     // Récupérer les événements *déjà existants* sur Google Calendar
-    const eventsRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?maxResults=2500`, {
+    const eventsRes = await googleAuthFetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?maxResults=2500`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     const existingEventsData = await eventsRes.json();
@@ -243,7 +275,7 @@ export async function syncAllEventsToGoogle() {
         const colorId = getGoogleColorId(course.classes?.color);
         if (colorId) eventBody.colorId = colorId;
 
-        await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`, {
+        await googleAuthFetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify(eventBody)
@@ -275,7 +307,7 @@ export async function syncAllEventsToGoogle() {
         const colorId = getGoogleColorId(assign.classes?.color || 'var(--grad-error)'); // Les rendus sont souvent rouges par défaut
         if (colorId) eventBody.colorId = colorId;
 
-        await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`, {
+        await googleAuthFetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify(eventBody)
@@ -301,7 +333,7 @@ export async function deleteClassPilotCalendar() {
   if (!token) return { error: "Non connecté à Google" };
 
   try {
-    const listRes = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
+    const listRes = await googleAuthFetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     
@@ -310,7 +342,7 @@ export async function deleteClassPilotCalendar() {
     const existingCal = data.items?.find(cal => cal.summary === "ClassPilot");
 
     if (existingCal) {
-      await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(existingCal.id)}`, {
+      await googleAuthFetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(existingCal.id)}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -332,7 +364,7 @@ export async function listGoogleDriveFolders(parentId = 'root') {
     const q = `'${parentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
     const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)&pageSize=1000`;
     
-    const response = await fetch(url, {
+    const response = await googleAuthFetch(url, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
@@ -358,7 +390,7 @@ export async function getFolderNameById(folderId) {
   if (!token) return "?";
 
   try {
-    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${folderId}?fields=name`, {
+    const res = await googleAuthFetch(`https://www.googleapis.com/drive/v3/files/${folderId}?fields=name`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (!res.ok) return "?";

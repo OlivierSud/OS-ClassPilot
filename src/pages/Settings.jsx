@@ -43,15 +43,16 @@ const Settings = () => {
       if (session?.provider_token) {
         console.log("Tokens Google détectés dans la session");
         localStorage.setItem('google_provider_token', session.provider_token);
+        
+        let updatePayload = { google_access_token: session.provider_token };
+        
         if (session.provider_refresh_token) {
           localStorage.setItem('google_refresh_token', session.provider_refresh_token);
+          updatePayload.google_refresh_token = session.provider_refresh_token;
         }
         
         // Sauvegarde immédiate en base de données pour plus de sécurité
-        await supabase.from('user_preferences').update({
-          google_access_token: session.provider_token,
-          google_refresh_token: session.provider_refresh_token
-        }).eq('user_id', session.user.id);
+        await supabase.from('user_preferences').update(updatePayload).eq('user_id', session.user.id);
       }
     }
     fetchIdentities();

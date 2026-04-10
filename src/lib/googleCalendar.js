@@ -15,10 +15,11 @@ export async function getGoogleToken() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await supabase.from('user_preferences').update({
-          google_access_token: session.provider_token,
-          google_refresh_token: session.provider_refresh_token
-        }).eq('user_id', user.id);
+        let updatePayload = { google_access_token: session.provider_token };
+        if (session.provider_refresh_token) {
+          updatePayload.google_refresh_token = session.provider_refresh_token;
+        }
+        await supabase.from('user_preferences').update(updatePayload).eq('user_id', user.id);
       }
     } catch (e) { console.error("Could not sync tokens to DB", e); }
     

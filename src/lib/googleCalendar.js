@@ -218,18 +218,15 @@ export async function syncAllEventsToGoogle() {
     const calendarId = await getOrCreateCalendarId(token);
     const now = new Date().toISOString();
 
-    // Récupérer les cours à venir
+    // Récupérer tous les cours (passés et à venir)
     const { data: courses } = await supabase
       .from('courses')
-      .select('title, start_time, end_time, type, classes(name, color)')
-      .gte('start_time', now);
+      .select('title, start_time, end_time, type, classes(name, color)');
       
-    // Récupérer les rendus à venir
+    // Récupérer tous les rendus (passés, à venir, complétés ou non)
     const { data: assignments } = await supabase
       .from('assignments')
-      .select('title, due_date, classes(name, color)')
-      .eq('completed', false)
-      .gte('due_date', now);
+      .select('title, due_date, classes(name, color)');
 
     // Récupérer les événements *déjà existants* sur Google Calendar
     const eventsRes = await googleAuthFetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?maxResults=2500`, {

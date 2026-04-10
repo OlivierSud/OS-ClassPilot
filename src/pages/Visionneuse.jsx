@@ -60,20 +60,17 @@ const Visionneuse = () => {
     const apiKey = DRIVE_CONFIG.apiKey;
     const isDefault = folderId === DRIVE_CONFIG.folderId;
     
-    // Pour le dossier par défaut d'Olivier, on utilise systématiquement l'API Key (Public)
-    // Pour un dossier personnalisé de l'utilisateur, on utilise son Token OAuth
-    let url;
-    let headers = {};
-
+    // Si c'est le dossier par défaut ou qu'il n'y a pas de token, on utilise la clé publique (fetch standard)
+    // Sinon on utilise notre wrapper d'authentification pour rafraîchir en cas de besoin
+    let response;
     if (isDefault || !token) {
       url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&fields=files(id,name,mimeType,webContentLink)&key=${apiKey}`;
+      response = await fetch(url);
     } else {
       url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&fields=files(id,name,mimeType,webContentLink)`;
-      headers = { 'Authorization': `Bearer ${token}` };
+      response = await googleAuthFetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
     }
     
-    // googleAuthFetch effectuera le rafraîchissement au besoin si l'utilisateur est concerné
-    const response = await googleAuthFetch(url, { headers });
     if (!response.ok) throw new Error("Failed to fetch folder: " + response.status);
     const resData = await response.json();
 

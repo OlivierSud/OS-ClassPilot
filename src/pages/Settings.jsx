@@ -38,21 +38,25 @@ const Settings = () => {
         }
       }
 
-      // Vérifier si des tokens sont présents dans l'URL (après redirection)
+      // Vérifier si des tokens sont présents dans l'URL (après redirection de connexion initiale)
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.provider_token) {
-        console.log("Tokens Google détectés dans la session");
-        localStorage.setItem('google_provider_token', session.provider_token);
-        
-        let updatePayload = { google_access_token: session.provider_token };
-        
-        if (session.provider_refresh_token) {
+      
+      // On sauvegarde seulement si on vient d'avoir un nouveau refresh_token pour éviter
+      // d'écraser un token d'accès rafraîchi récemment avec notre vieux provider_token
+      if (session?.provider_refresh_token) {
+        const storedRefresh = localStorage.getItem('google_refresh_token');
+        if (storedRefresh !== session.provider_refresh_token) {
+          console.log("Nouveau Refresh Token Google détecté");
+          localStorage.setItem('google_provider_token', session.provider_token);
           localStorage.setItem('google_refresh_token', session.provider_refresh_token);
-          updatePayload.google_refresh_token = session.provider_refresh_token;
+          
+          let updatePayload = { 
+            google_access_token: session.provider_token,
+            google_refresh_token: session.provider_refresh_token 
+          };
+          
+          await supabase.from('user_preferences').update(updatePayload).eq('user_id', session.user.id);
         }
-        
-        // Sauvegarde immédiate en base de données pour plus de sécurité
-        await supabase.from('user_preferences').update(updatePayload).eq('user_id', session.user.id);
       }
     }
     fetchIdentities();

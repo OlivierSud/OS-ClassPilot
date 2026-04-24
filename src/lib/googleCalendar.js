@@ -2,16 +2,30 @@ import { supabase } from './supabase';
 
 // Récupère le token Google de la session courante
 export async function getGoogleToken() {
+  // 1. Priorité au token local qui a potentiellement été rafraîchi par `googleAuthFetch`
+  let token = localStorage.getItem('google_provider_token');
+  if (token) return token;
+
+  // 2. Si vide localement, on tente de récupérer depuis les préférences en DB
+  try {
+    const { data: prefs } = await supabase.from('user_preferences').select('google_access_token').single();
+    if (prefs?.google_access_token) {
+      token = prefs.google_access_token;
+      localStorage.setItem('google_provider_token', token);
+      return token;
+    }
+  } catch (e) {}
+  
+  // 3. Fallback en tout dernier recours : les tokens de la session originelle
   const { data: { session } } = await supabase.auth.getSession();
   
-  // 1. Priorité aux tokens de la session active (viennent d'être fournis par Supabase)
   if (session?.provider_token) {
     localStorage.setItem('google_provider_token', session.provider_token);
     if (session.provider_refresh_token) {
       localStorage.setItem('google_refresh_token', session.provider_refresh_token);
     }
     
-    // On tente de les sauvegarder aussi en DB pour la persistance multi-appareil/PWA
+    // On essaie de sauvegarder en DB
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -26,21 +40,7 @@ export async function getGoogleToken() {
     return session.provider_token;
   }
   
-  // 2. Fallback sur localStorage
-  let token = localStorage.getItem('google_provider_token');
-  
-  // 3. Si vide dans localStorage, on tente de récupérer depuis les préférences en DB
-  if (!token) {
-    try {
-      const { data: prefs } = await supabase.from('user_preferences').select('google_access_token').single();
-      if (prefs?.google_access_token) {
-        token = prefs.google_access_token;
-        localStorage.setItem('google_provider_token', token);
-      }
-    } catch (e) {}
-  }
-  
-  return token;
+  return null;
 }
 
 export async function isGoogleConnected() {

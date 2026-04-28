@@ -88,6 +88,9 @@ CREATE TABLE user_preferences (
   daily_hour INTEGER DEFAULT 18,
   notify_weekly BOOLEAN DEFAULT TRUE,
   theme TEXT DEFAULT 'light',
+  google_access_token TEXT,
+  google_refresh_token TEXT,
+  blender_folder_id TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

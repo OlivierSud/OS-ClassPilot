@@ -2,44 +2,38 @@ import { supabase } from './supabase';
 
 // Récupère le token Google de la session courante
 export async function getGoogleToken() {
-  // 1. Priorité au token local qui a potentiellement été rafraîchi par `googleAuthFetch`
+  // 1. Priorité au token local (mémoire vive/session)
   let token = localStorage.getItem('google_provider_token');
-  if (token) return token;
+  if (token) {
+    console.log("DEBUG: Token trouvé dans le localStorage");
+    return token;
+  }
 
   // 2. Si vide localement, on tente de récupérer depuis les préférences en DB
+  console.log("DEBUG: LocalStorage vide, tentative de récupération depuis la DB...");
   try {
-    const { data: prefs } = await supabase.from('user_preferences').select('google_access_token').single();
-    if (prefs?.google_access_token) {
+    const { data: prefs, error: dbError } = await supabase.from('user_preferences').select('google_access_token').single();
+    if (dbError) {
+      console.warn("DEBUG: Impossible de lire google_access_token en DB.", dbError.message);
+    } else if (prefs?.google_access_token) {
+      console.log("DEBUG: Token récupéré depuis la DB");
       token = prefs.google_access_token;
       localStorage.setItem('google_provider_token', token);
       return token;
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error("DEBUG: Échec critique lecture DB", e);
+  }
   
-  // 3. Fallback en tout dernier recours : les tokens de la session originelle
+  // 3. Fallback : session Supabase
   const { data: { session } } = await supabase.auth.getSession();
-  
   if (session?.provider_token) {
+    console.log("DEBUG: Token récupéré depuis la session Supabase active");
     localStorage.setItem('google_provider_token', session.provider_token);
-    if (session.provider_refresh_token) {
-      localStorage.setItem('google_refresh_token', session.provider_refresh_token);
-    }
-    
-    // On essaie de sauvegarder en DB
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        let updatePayload = { google_access_token: session.provider_token };
-        if (session.provider_refresh_token) {
-          updatePayload.google_refresh_token = session.provider_refresh_token;
-        }
-        await supabase.from('user_preferences').update(updatePayload).eq('user_id', user.id);
-      }
-    } catch (e) { console.error("Could not sync tokens to DB", e); }
-    
     return session.provider_token;
   }
   
+  console.warn("DEBUG: Aucun token Google trouvé (localStorage, DB, ou Session)");
   return null;
 }
 
@@ -64,10 +58,12 @@ export async function checkTokenValidity(token) {
 // Wrapper intelligent pour les appels Google (gère le 401 et le refresh transparent via Edge Function)
 export async function googleAuthFetch(url, options = {}) {
   let token = await getGoogleToken();
-  if (!token) return { response: null, error: "Non connecté à Google" };
+  if (!token) {
+    console.error("DEBUG: Abandon de googleAuthFetch car aucun token n'est disponible.");
+    return { response: null, error: "Non connecté à Google" };
+  }
 
   options.headers = options.headers || {};
-  // Si le fetch passe déjà le token, on s'assure de l'utiliser ou le mettre à jour
   if (!options.headers['Authorization']) {
     options.headers['Authorization'] = `Bearer ${token}`;
   }
@@ -75,18 +71,34 @@ export async function googleAuthFetch(url, options = {}) {
   let response = await fetch(url, options);
 
   if (response.status === 401) {
-    console.log("Token Google expiré (401), tentative de rafraîchissement transparent via serveur...");
-    const { data, error } = await supabase.functions.invoke('refresh-google-token');
+    console.log("DEBUG: 401 Reçu. Tentative de rafraîchissement via Edge Function...");
     
-    if (!error && data?.access_token) {
-      console.log("Token Google rafraîchi avec succès!");
-      localStorage.setItem('google_provider_token', data.access_token);
-      // Mettre à jour le header avec le nouveau token
-      options.headers['Authorization'] = `Bearer ${data.access_token}`;
-      // On réessaie la requête originale
-      response = await fetch(url, options);
-    } else {
-      console.warn("Le rafraîchissement a échoué. Veuillez vous reconnecter.");
+    // Vérification rapide : avons-nous un refresh token ?
+    const refreshToken = localStorage.getItem('google_refresh_token');
+    if (!refreshToken) {
+      console.warn("DEBUG: Aucun refresh_token local. La Edge Function va tenter de le lire en DB.");
+    }
+
+    try {
+      const { data, error: invokeError } = await supabase.functions.invoke('refresh-google-token');
+      
+      if (invokeError) {
+        console.error("DEBUG: Erreur d'appel à la Edge Function:", invokeError);
+        throw invokeError;
+      }
+
+      if (data?.access_token) {
+        console.log("DEBUG: Nouveau access_token obtenu avec succès !");
+        localStorage.setItem('google_provider_token', data.access_token);
+        
+        // On réessaie la requête originale avec le nouveau token
+        options.headers['Authorization'] = `Bearer ${data.access_token}`;
+        return await fetch(url, options);
+      } else {
+        console.error("DEBUG: La Edge Function n'a pas renvoyé de token.", data);
+      }
+    } catch (err) {
+      console.error("DEBUG: Échec total du rafraîchissement.", err);
     }
   }
 
@@ -378,6 +390,9 @@ export async function listGoogleDriveFolders(parentId = 'root') {
     return { data: data.files || [] };
   } catch (err) {
     console.error("DRIVE ERROR:", err);
+    if (err.message.includes('401') || err.message.includes('token')) {
+      return { error: "Votre session Google a expiré. Veuillez vous reconnecter dans les réglages." };
+    }
     return { error: err.message };
   }
 }

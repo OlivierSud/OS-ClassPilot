@@ -39,8 +39,13 @@ const Settings = () => {
       }
 
       // Vérifier si des tokens sont présents dans l'URL (après redirection de connexion initiale)
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
+      if (sessionError) {
+        console.error("Session error:", sessionError);
+        return;
+      }
+
       // On sauvegarde seulement si on vient d'avoir un nouveau refresh_token pour éviter
       // d'écraser un token d'accès rafraîchi récemment avec notre vieux provider_token
       if (session?.provider_refresh_token) {
@@ -55,8 +60,17 @@ const Settings = () => {
             google_refresh_token: session.provider_refresh_token 
           };
           
-          await supabase.from('user_preferences').update(updatePayload).eq('user_id', session.user.id);
+          const { error: dbError } = await supabase.from('user_preferences').update(updatePayload).eq('user_id', session.user.id);
+          if (dbError) {
+            console.error("Erreur lors de la sauvegarde des tokens en DB:", dbError);
+            alert("Erreur de base de données : " + dbError.message + "\n\nAVIEZ-VOUS EXÉCUTÉ LE SCRIPT SQL ? (Voir google_connection_fix.md)");
+          } else {
+            console.log("Tokens Google synchronisés avec la base de données.");
+          }
         }
+      } else if (session?.provider_token) {
+        // Même si on n'a pas de refresh token, on met à jour l'access token local
+        localStorage.setItem('google_provider_token', session.provider_token);
       }
     }
     fetchIdentities();
@@ -124,6 +138,10 @@ const Settings = () => {
   }, [isDarkMode]);
 
   const handleConnectGoogle = async () => {
+    // On nettoie les tokens locaux pour forcer une nouvelle capture
+    localStorage.removeItem('google_provider_token');
+    localStorage.removeItem('google_refresh_token');
+
     const { error } = await supabase.auth.linkIdentity({
       provider: 'google',
       options: {
@@ -137,7 +155,12 @@ const Settings = () => {
     });
     
     if (error) {
-      alert("Erreur de connexion Google : " + error.message);
+      if (error.message.includes('already linked')) {
+        // Si déjà lié, on suggère de déconnecter d'abord ou on tente de forcer
+        alert("Ce compte Google est déjà lié à ClassPilot. Si la connexion ne fonctionne pas, déconnectez d'abord le compte Google (bouton rouge en bas) puis reconnectez-vous.");
+      } else {
+        alert("Erreur de connexion Google : " + error.message);
+      }
     } else {
       alert("Redirection en cours vers Google...");
     }
